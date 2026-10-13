@@ -52,3 +52,4 @@
 - `tests/rls.test.ts`
 - `tsconfig.json`
 - `vitest.config.ts`
+- `docs/PULL_REQUEST.md`

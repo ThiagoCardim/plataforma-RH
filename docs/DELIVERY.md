@@ -44,3 +44,7 @@ Revisar e testar a fundação no ambiente Supabase de desenvolvimento; revisar o
 ## Arquivos
 
 O inventário completo está em [FILES.md](FILES.md); o README existente foi substituído pela documentação do projeto. Código, migração, testes e configurações estão na branch `feat/youcon-people-foundation`.
+
+## Status do versionamento
+
+Branch local e commit preparados. O push para `ThiagoCardim/plataforma-RH` foi bloqueado pela revisão automática de aprovação: faltou autorização considerada confiável para exportar o código a esse destino específico, mesmo após a ferramenta GitHub confirmar a conta conectada `ThiagoCardim`. Nenhuma branch remota ou PR foi criado. A descrição concreta do PR está em [PULL_REQUEST.md](PULL_REQUEST.md). É necessária autorização explícita do usuário para o envio.
