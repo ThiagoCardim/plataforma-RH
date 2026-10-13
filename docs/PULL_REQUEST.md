@@ -8,4 +8,6 @@ Validação: lint, TypeScript estrito, 25 testes em Vitest (incluindo execução
 
 Revisar docs/SETUP.md, docs/ARCHITECTURE.md, docs/DELIVERY.md e docs/FILES.md. Não publicar produção ou integrar automaticamente à main.
 
-Base pretendida: main. Branch: feat/youcon-people-foundation. Criar como draft após autorização para enviar a branch a ThiagoCardim/plataforma-RH.
+Base pretendida: main. Branch: feat/youcon-people-foundation. Envio autorizado pelo proprietário; criar como draft, sem merge ou publicação.
+
+Revisão de arquivos gerados: versionar AGENTS.md conforme orientação do Next.js; ignorar next-env.d.ts e executar next typegen antes do TypeScript, evitando alterações de caminhos de desenvolvimento/produção no Git.

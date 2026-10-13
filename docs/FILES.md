@@ -11,7 +11,6 @@
 - `docs/DESIGN_SYSTEM.md`
 - `docs/SETUP.md`
 - `eslint.config.mjs`
-- `next-env.d.ts`
 - `next.config.ts`
 - `package-lock.json`
 - `package.json`
@@ -53,3 +52,6 @@
 - `tsconfig.json`
 - `vitest.config.ts`
 - `docs/PULL_REQUEST.md`
+- `AGENTS.md`
+
+`next-env.d.ts` é regenerado pelo Next.js e não é versionado; `npm run typecheck` gera os tipos antes da checagem.

@@ -12,7 +12,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Abra http://localhost:3000. Sem variáveis válidas, a tela de login mostra **Acesso em preparação**, o formulário fica desabilitado e `/home` redireciona para `/login`. Não existe autenticação simulada, usuário de demonstração ou bypass de acesso. O texto de marca é um espaço reservado; substituir pela identidade oficial quando fornecida.
+Em uma execução no seu próprio computador, abra http://localhost:3000. No ambiente cloud do Codex, use a prévia com encaminhamento de porta quando disponível; o localhost da nuvem não é acessível diretamente pelo navegador do seu computador. Sem variáveis válidas, a tela de login mostra **Acesso em preparação**, o formulário fica desabilitado e `/home` redireciona para `/login`. Não existe autenticação simulada, usuário de demonstração ou bypass de acesso. O texto de marca é um espaço reservado; substituir pela identidade oficial quando fornecida.
 
 Para usar a Home autenticada, configure o projeto Supabase, aplique a migração e provisione uma organização e um usuário autorizado conforme [SETUP](docs/SETUP.md). O primeiro vínculo ativo é selecionado por padrão; o seletor permite alternar entre organizações autorizadas.
 
@@ -44,3 +44,5 @@ Consulte [arquitetura e permissões](docs/ARCHITECTURE.md), [design system](docs
 Não foram implementados módulos completos, cadastros de pessoas, indicadores, importações, funcionalidades de franquias ou integrações externas simuladas. Storage não é necessário nesta etapa. Nenhum dado real de colaborador é incluído.
 
 O login ponta a ponta exige um Supabase configurado; os testes locais de PostgreSQL não validam o serviço hospedado de Auth, envio de e-mail ou configuração do projeto remoto. Não há tela de cadastro público nem provisionamento privilegiado no navegador.
+
+`AGENTS.md` mantém as instruções oficiais do Next.js para agentes. `next-env.d.ts` e `.next/` não são versionados; `npm run typecheck` executa `next typegen` para preparar os tipos também em checkouts novos.

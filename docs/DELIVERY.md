@@ -47,4 +47,6 @@ O inventário completo está em [FILES.md](FILES.md); o README existente foi sub
 
 ## Status do versionamento
 
-Branch local e commit preparados. O push para `ThiagoCardim/plataforma-RH` foi bloqueado pela revisão automática de aprovação: faltou autorização considerada confiável para exportar o código a esse destino específico, mesmo após a ferramenta GitHub confirmar a conta conectada `ThiagoCardim`. Nenhuma branch remota ou PR foi criado. A descrição concreta do PR está em [PULL_REQUEST.md](PULL_REQUEST.md). É necessária autorização explícita do usuário para o envio.
+Branch `feat/youcon-people-foundation` preparada para PR em rascunho, sem merge ou publicação. O bloqueio inicial do envio foi documentado; posteriormente o usuário autorizou explicitamente enviar esta branch para `ThiagoCardim/plataforma-RH` e criar o PR. A descrição está em [PULL_REQUEST.md](PULL_REQUEST.md).
+
+Na revisão final, `AGENTS.md` foi incluído conforme a recomendação do Next.js. `next-env.d.ts` foi removido do versionamento e adicionado ao `.gitignore`, pois seus imports variam entre desenvolvimento e build. `npm run typecheck` agora executa `next typegen` antes do TypeScript, preparando também um checkout novo. Nenhum artefato `.next`, credencial, segredo ou dado real de pessoa está incluído.
