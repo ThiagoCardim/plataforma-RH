@@ -1,0 +1,11 @@
+node_modules/
+.next/
+out/
+coverage/
+.env*
+!.env.example
+*.tsbuildinfo
+work/
+supabase/.temp/
+supabase/.branches/
+next-env.d.ts
