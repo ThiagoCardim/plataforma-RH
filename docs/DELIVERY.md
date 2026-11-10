@@ -2,13 +2,15 @@
 
 ## Status
 
+**Atualização:** após a preparação, o usuário autorizou e a migração específica foi aplicada. O relato abaixo documenta a etapa original de preparação; o estado atual, a versão remota e as verificações estão em [MIGRATION_APPLIED.md](MIGRATION_APPLIED.md). API/Auth e primeiro acesso continuam pendentes.
+
 Preparação concluída em código na branch `feat/youcon-people-shared-database`, baseada na fundação do PR #1. **Nenhuma escrita, migração, provisionamento, alteração de Auth/Data API ou configuração foi executada no Supabase remoto.** A aplicação não foi conectada ao banco ativo. Nenhum merge, publicação em produção ou módulo da Etapa 02 foi realizado.
 
 ## O que mudou
 
 - Sete tabelas próprias e a função auxiliar passam a pertencer a `youcon_people` e `youcon_people_private`.
 - A migração original incompatível com banco compartilhado está em `docs/history/20261013150520_foundation.sql.txt`, fora da pasta executável.
-- Nova migração transacional: `supabase/migrations/20261110185200_shared_database_foundation.sql`. Recusa schemas existentes, reverte em falhas e verifica privilégios herdados inesperados. Grants/revokes e RLS afetam somente objetos novos. Apenas catálogos de papéis/permissões são inseridos, sem pessoas ou organizações.
+- Nova migração transacional: `supabase/migrations/20261110203914_youcon_people_shared_database_foundation.sql`. Recusa schemas existentes, reverte em falhas e verifica privilégios herdados inesperados. Grants/revokes e RLS afetam somente objetos novos. Apenas catálogos de papéis/permissões são inseridos, sem pessoas ou organizações.
 - Não há FK, dependência ou novo gatilho em tabelas compartilhadas de Auth. UUIDs são validados administrativamente; perfis/vínculos são próprios. Não há sincronização de perfis legados ou inscrição automática de usuários.
 - Clientes SSR/browser/proxy fixam o schema People, com cookie/storage key `youcon-people-auth`. Logout com `scope: local` evita pedido de revogação de todas as sessões do usuário.
 - Configuração Supabase local inclui o schema próprio e desativa seeds inexistentes. Ela não deve ser enviada ao projeto remoto.

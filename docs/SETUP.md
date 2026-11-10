@@ -1,10 +1,10 @@
 # Configuração para banco compartilhado
 
-**Status: somente preparação. A migração desta branch não foi aplicada ao Supabase remoto.** Nenhum comando desta entrega cria usuários, muda Auth ou conecta a aplicação ao projeto compartilhado automaticamente.
+**Status: a migração específica foi aplicada após autorização do usuário.** API, Auth, usuários e conexão da aplicação não foram configurados. Consulte [MIGRATION_APPLIED.md](MIGRATION_APPLIED.md) para o registro da execução. As etapas de revisão abaixo documentam o procedimento; não executar novamente a migração.
 
 ## Revisar antes de qualquer aplicação
 
-1. Revisar [SHARED_DATABASE.md](SHARED_DATABASE.md) e `supabase/migrations/20261110185200_shared_database_foundation.sql`. A migração cria exclusivamente `youcon_people` e `youcon_people_private`. Se algum desses schemas existir, ela interrompe e reverte a transação, em vez de reutilizá-lo. Privilégios herdados inesperados de outras roles também provocam aborto, sem alteração dos defaults compartilhados.
+1. Revisar [SHARED_DATABASE.md](SHARED_DATABASE.md) e `supabase/migrations/20261110203914_youcon_people_shared_database_foundation.sql`. A migração cria exclusivamente `youcon_people` e `youcon_people_private`. Se algum desses schemas existir, ela interrompe e reverte a transação, em vez de reutilizá-lo. Privilégios herdados inesperados de outras roles também provocam aborto, sem alteração dos defaults compartilhados.
 2. A migração antiga de banco vazio está arquivada em `docs/history/20261013150520_foundation.sql.txt`, fora da cadeia executável. **Não executá-la.** Se ela já foi aplicada em outro ambiente, não apagar ou reescrever o histórico desse ambiente: preparar um plano próprio de transição. Esta nova base destina-se a ambientes ainda não provisionados para People.
 3. Confirmar backup recuperável do projeto compartilhado e validar primeiro em banco descartável de teste. `npm test` executa os testes locais em PostgreSQL PGlite, sem credenciais ou conexão remota e sem copiar dados reais.
 4. Um operador pode revisar o SQL de catálogo somente de leitura em `supabase/review/preflight.sql`: ocupação de schemas, privilégios padrão e gatilhos em Auth. Nenhum gatilho existente é alterado pela migração. Antes de criar qualquer conta, revisar a função do gatilho com o responsável pelos aplicativos existentes.

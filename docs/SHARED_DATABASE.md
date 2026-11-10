@@ -1,6 +1,6 @@
 # Plano revisável — convivência no Supabase compartilhado
 
-Esta adaptação está preparada em código; **nenhuma escrita ou configuração remota foi executada**. A inspeção anterior identificou uma tabela `public.profiles`, uso do schema `private` e um gatilho de criação de perfil em `auth.users`. Não reutilizamos essas estruturas. Este documento não reproduz dados nem definições de terceiros.
+**Estado atual:** a migração foi aplicada após autorização explícita do usuário. Consulte [MIGRATION_APPLIED.md](MIGRATION_APPLIED.md). API, Auth e provisionamento continuam sem alterações. O plano abaixo foi a base para essa aplicação. A inspeção anterior identificou uma tabela `public.profiles`, uso do schema `private` e um gatilho de criação de perfil em `auth.users`. Não reutilizamos essas estruturas. Este documento não reproduz dados nem definições de terceiros.
 
 ## Alterações propostas
 
@@ -30,7 +30,9 @@ O cookie/storage key próprio evita reutilização acidental do armazenamento pa
 
 A People não cria contas automaticamente. O gatilho existente em Auth pode afetar `public.profiles` quando qualquer usuário é criado: revisar a função e preferir vincular um usuário já existente. Ausência de FK para Auth evita modificar dependências/gatilhos existentes, mas exige validação administrativa do UUID e revisão de vínculos na exclusão de conta. Essa escolha é intencional; não executar limpeza automática em tabelas compartilhadas.
 
-## Etapas ainda não executadas
+## Plano de execução e pendências
+
+As etapas 1 a 3 foram concluídas para a migração específica; as etapas 4 a 6 continuam pendentes.
 
 1. Revisão da migração específica e confirmação de backup recuperável.
 2. Aprovação do usuário para eventual aplicação remota, separada desta preparação.

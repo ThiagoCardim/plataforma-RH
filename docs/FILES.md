@@ -50,7 +50,7 @@ Código da Etapa 01 e adaptação ao banco compartilhado. `docs/FILES.md` é est
 - `src/proxy.ts`
 - `supabase/.gitignore`
 - `supabase/config.toml`
-- `supabase/migrations/20261110185200_shared_database_foundation.sql`
+- `supabase/migrations/20261110203914_youcon_people_shared_database_foundation.sql`
 - `supabase/review/preflight.sql`
 - `tests/access.test.ts`
 - `tests/auth-actions.test.ts`
@@ -62,4 +62,6 @@ Código da Etapa 01 e adaptação ao banco compartilhado. `docs/FILES.md` é est
 - `tsconfig.json`
 - `vitest.config.ts`
 
-`next-env.d.ts`, `.next/`, `node_modules/`, caches e arquivos `.env` reais não são versionados. O SQL antigo em `docs/history/` é apenas referência e não pode ser executado. Somente o novo SQL de `supabase/migrations/` pertence à cadeia local preparada, ainda não aplicada ao remoto.
+`next-env.d.ts`, `.next/`, `node_modules/`, caches e arquivos `.env` reais não são versionados. O SQL antigo em `docs/history/` é apenas referência e não pode ser executado. Somente o novo SQL de `supabase/migrations/` pertence à cadeia local preparada, aplicada ao remoto após autorização, conforme docs/MIGRATION_APPLIED.md.
+
+- `docs/MIGRATION_APPLIED.md`
