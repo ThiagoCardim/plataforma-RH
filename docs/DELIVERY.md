@@ -1,52 +1,39 @@
-# Entrega — Fundação técnica
+# Entrega — adaptação ao Supabase compartilhado
 
-## Implementado
+## Status
 
-Etapa 01 concluída em código: projeto Next.js App Router/TypeScript estrito, Tailwind e componentes shadcn/ui locais; login real preparado para Supabase Auth; sessão SSR e cookies renovados no proxy; guardas de identidade e permissões por rota; layout responsivo; Home contextual; navegação por papel; estrutura multi-organização; migração e RLS; estados de loading, vazio, falha e acesso negado; documentação e testes.
+Preparação concluída em código na branch `feat/youcon-people-shared-database`, baseada na fundação do PR #1. **Nenhuma escrita, migração, provisionamento, alteração de Auth/Data API ou configuração foi executada no Supabase remoto.** A aplicação não foi conectada ao banco ativo. Nenhum merge, publicação em produção ou módulo da Etapa 02 foi realizado.
 
-A Home usa somente organização, perfil mínimo, vínculo e papéis da sessão real. Não há indicadores fictícios. Base gerencial e dashboard são espaços vazios exclusivos de RH/Diretoria. Os módulos futuros não foram implementados.
+## O que mudou
 
-## Verificações executadas
+- Sete tabelas próprias e a função auxiliar passam a pertencer a `youcon_people` e `youcon_people_private`.
+- A migração original incompatível com banco compartilhado está em `docs/history/20261013150520_foundation.sql.txt`, fora da pasta executável.
+- Nova migração transacional: `supabase/migrations/20261110185200_shared_database_foundation.sql`. Recusa schemas existentes, reverte em falhas e verifica privilégios herdados inesperados. Grants/revokes e RLS afetam somente objetos novos. Apenas catálogos de papéis/permissões são inseridos, sem pessoas ou organizações.
+- Não há FK, dependência ou novo gatilho em tabelas compartilhadas de Auth. UUIDs são validados administrativamente; perfis/vínculos são próprios. Não há sincronização de perfis legados ou inscrição automática de usuários.
+- Clientes SSR/browser/proxy fixam o schema People, com cookie/storage key `youcon-people-auth`. Logout com `scope: local` evita pedido de revogação de todas as sessões do usuário.
+- Configuração Supabase local inclui o schema próprio e desativa seeds inexistentes. Ela não deve ser enviada ao projeto remoto.
+- Procedimento de revisão, backup, aprovação e conexão futura em [SHARED_DATABASE.md](SHARED_DATABASE.md) e [SETUP.md](SETUP.md). Inventário em [FILES.md](FILES.md).
 
-| Verificação                                              | Resultado                                                  |
-| -------------------------------------------------------- | ---------------------------------------------------------- |
-| `npm run lint`                                           | Passou, sem avisos                                         |
-| `npm run typecheck`                                      | Passou, TypeScript estrito                                 |
-| `npm test`                                               | Passou, 25 testes em 3 arquivos                            |
-| `npm run build`                                          | Passou, build otimizado Next.js com Webpack                |
-| `git diff --check`                                       | Passou                                                     |
-| HTTP `/login` sem Supabase                               | 200, estado Acesso em preparação e formulário desabilitado |
-| HTTP `/home`, `/gente-gestao`, `/gente-gestao/dashboard` | 307 para `/login` sem sessão/configuração                  |
-| HTTP `/acesso-negado`                                    | 200                                                        |
-| HTTP rota inexistente                                    | 404                                                        |
-| Cache das respostas de login e protegidas                | `private, no-store`                                        |
+## Verificações finais executadas
 
-O primeiro build com Turbopack falhou por restrição de portas internas do ambiente. O projeto passou a usar Webpack. Uma tentativa intermediária de build teve falha ao coletar o resultado do TypeScript; o build final completo passou após a execução com permissões adequadas do ambiente.
+| Verificação                     | Resultado                       |
+| ------------------------------- | ------------------------------- |
+| `npm ci` com lockfile existente | Passou                          |
+| `npm run lint`                  | Passou, sem avisos              |
+| `npm run typecheck`             | Passou, incluindo next typegen  |
+| `npm test`                      | Passou, 39 testes em 6 arquivos |
+| `npm run build`                 | Passou, Next.js/Webpack         |
+| `git diff --check`              | Passou                          |
 
-SQL/RLS validado por execução da migração no PostgreSQL PGlite: acesso profissional/CLT, estágio e PJ, bloqueio de liderança, RH e Diretoria, isolamento de organizações, leitura de perfil próprio, vínculo inativo, grants de escrita negados, constraint de papéis gerenciais, FK composta, acumulação de papéis e revogação sem refresh de claims.
+Os testes de PostgreSQL executam somente em PGlite com fixtures sintéticas. Verificam isolamento de organizações/papéis, revogação, RLS, grants de escrita, conservação de metadados/dados/permissões/defaults/gatilhos legados, colisões de schema, rollback após erro intermediário e recusa de concessões inesperadas herdadas. Verificam também que usuários Auth de outro app não são inscritos na People e que o gatilho sintético legado continua operando.
 
-Não houve teste visual em navegador: a sessão não disponibiliza ferramenta de navegador/preview. Responsividade e acessibilidade foram revisadas no código, mas exigem validação visual nos dispositivos alvo. Login/logout/renovação com Supabase hospedado e advisors remotos ainda não foram executados, pois não há projeto selecionado nem credenciais configuradas. A consulta ao changelog Supabase por HTTP foi bloqueada pela política de destinos; a implementação de SSR foi conferida na documentação atual via ferramenta Supabase `search_docs`.
+Testes dos clientes usam o SDK real com fetch interceptado para conferir Accept-Profile `youcon_people`; validam as opções de cookies em SSR/browser/proxy e o logout local. Não executam requisições no projeto compartilhado. Nenhum dado real foi importado ou incluído no repositório.
 
-## Configurações e pendências
+## Limites e pendências
 
-- Projeto Supabase de desenvolvimento, URL e chave publishable em `.env.local`.
-- Aplicar migração e configurar Auth remoto com signup e login anônimo desabilitados.
-- Provisionar organização, usuário Auth e vínculo/papéis por operador autorizado.
-- Validar fluxo Auth real, RLS pela Data API e advisors no projeto alvo.
-- Fornecer identidade visual oficial e validar telas em desktop, tablet e celular.
-- Configurar Vercel apenas quando a implantação de preview for solicitada; nenhuma produção publicada.
-- Fluxos de convite, definição/recuperação de senha na aplicação e eventual MFA ainda não fazem parte desta etapa.
-
-## Próximos passos
-
-Revisar e testar a fundação no ambiente Supabase de desenvolvimento; revisar o PR sem merge automático. Depois, definir e autorizar separadamente o próximo módulo. Cadastro completo de pessoas, importações e demais módulos continuam fora do escopo.
-
-## Arquivos
-
-O inventário completo está em [FILES.md](FILES.md); o README existente foi substituído pela documentação do projeto. Código, migração, testes e configurações estão na branch `feat/youcon-people-foundation`.
-
-## Status do versionamento
-
-Branch `feat/youcon-people-foundation` preparada para PR em rascunho, sem merge ou publicação. O bloqueio inicial do envio foi documentado; posteriormente o usuário autorizou explicitamente enviar esta branch para `ThiagoCardim/plataforma-RH` e criar o PR. A descrição está em [PULL_REQUEST.md](PULL_REQUEST.md).
-
-Na revisão final, `AGENTS.md` foi incluído conforme a recomendação do Next.js. `next-env.d.ts` foi removido do versionamento e adicionado ao `.gitignore`, pois seus imports variam entre desenvolvimento e build. `npm run typecheck` agora executa `next typegen` antes do TypeScript, preparando também um checkout novo. Nenhum artefato `.next`, credencial, segredo ou dado real de pessoa está incluído.
+- O changelog Supabase via HTTP foi bloqueado pelo proxy (403). O mecanismo de schemas e sua exposição foram conferidos na documentação atual via `search_docs`; assinaturas do SDK foram verificadas na versão instalada.
+- Não foi feita nova inspeção ou execução no Supabase remoto nesta preparação. A função do gatilho real de Auth ainda precisa ser revisada antes de qualquer criação de conta; o teste usa uma função sintética, não uma cópia da implementação existente.
+- A migração precisa de revisão e aprovação antes da aplicação específica. Confirmar backup recuperável e o alvo, sem executar sincronização geral de migrações/configurações de outros projetos.
+- A inclusão aditiva de `youcon_people` na lista atual de schemas expostos da Data API é uma configuração separada, ainda não realizada. Preservar todas as entradas existentes e não expor `youcon_people_private`.
+- URL/chave publishable, provisionamento aprovado e validação de Auth/Data API/advisors reais continuam pendentes. Preservar signup, provedores, chaves, URLs e demais configurações globais de Auth.
+- Não houve teste visual de interface nesta adaptação de banco/cliente; nenhuma tela foi alterada. O build e os testes de sessão/consultas não substituem a validação ponta a ponta com identidade real após aprovação.

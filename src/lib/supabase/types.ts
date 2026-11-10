@@ -6,7 +6,7 @@ type Table<Row> = {
   Relationships: [];
 };
 export type Database = {
-  public: {
+  youcon_people: {
     Tables: {
       organizations: Table<{
         id: string;

@@ -10,8 +10,10 @@ Fluxo: login → `signInWithPassword` → cookies SSR → `getUser` → vínculo
 
 ## Modelo
 
+Todas as tabelas abaixo pertencem exclusivamente a `youcon_people`. A função auxiliar fica em `youcon_people_private`, sem reutilizar `public.profiles` ou o schema `private` existente. Os clientes SSR/browser/proxy fixam esse schema e usam `youcon-people-auth` como cookie/storage key; logout com `scope: local`. Consulte [SHARED_DATABASE.md](SHARED_DATABASE.md) para limites e provisionamento do Auth compartilhado.
+
 - `organizations`: cada ambiente isolado, sem recursos de franquias.
-- `profiles`: nome de exibição mínimo por usuário Supabase; leitura apenas do próprio perfil. Sem dados pessoais sensíveis adicionais.
+- `profiles`: nome de exibição mínimo por UUID de usuário Supabase, validado pelo operador, sem FK para auth.users; leitura apenas do próprio perfil. Sem dados pessoais sensíveis adicionais.
 - `memberships`: vínculo do usuário à organização, com `contract_type` (`clt`, `intern`, `pj`) e estado `active`.
 - `roles`: `professional`, `leadership`, `hr`, `director`.
 - `membership_roles`: papéis acumuláveis por vínculo. FK composta impede atribuir papéis de um vínculo a outro usuário.
@@ -28,16 +30,18 @@ CLT, estágio e PJ são vínculos contratuais, não níveis de acesso. Uma lider
 
 ## Banco e RLS
 
-Todas as sete tabelas públicas têm RLS. `anon` não tem privilégios. `authenticated` recebe somente SELECT, sujeito às policies: organizações de vínculos ativos, vínculos próprios, papéis próprios ativos e perfil próprio. Catálogos não contêm dados pessoais. Não há políticas de escrita para usuários, incluindo RH e Diretoria; nesta etapa a administração é operacional, fora da aplicação, por operador confiável.
+Todas as sete tabelas do schema People têm RLS. `anon` não tem privilégios. `authenticated` recebe somente SELECT, sujeito às policies: organizações de vínculos ativos, vínculos próprios ativos, papéis próprios ativos e perfil próprio. Catálogos não contêm dados pessoais e também exigem vínculo People ativo. Não há políticas de escrita para usuários, incluindo RH e Diretoria; nesta etapa a administração é operacional, fora da aplicação, por operador confiável.
 
-`private.has_permission(organization_id, permission_code)` usa SECURITY INVOKER, `search_path` vazio, a identidade `auth.uid()` e consultas protegidas pelas RLS; não contorna RLS. A função fica em schema não exposto pela Data API. Não há views ou funções SECURITY DEFINER. Não há chave privilegiada no aplicativo.
+`youcon_people_private.has_permission(organization_id, permission_code)` usa SECURITY INVOKER, `search_path` vazio, a identidade `auth.uid()` e consultas protegidas pelas RLS; não contorna RLS. A função fica em schema não exposto pela Data API. Não há views ou funções SECURITY DEFINER. Não há chave privilegiada no aplicativo.
 
-Não existe tabela de pessoas confidenciais ou de indicadores nesta entrega. Ao criar futuramente uma tabela gerencial, incluir `organization_id` NOT NULL, FK, índices e RLS; o predicado obrigatório será `private.has_permission(organization_id, 'people.management.view')`. Dashboards deverão exigir `people.dashboard.view`, inclusive em consultas e endpoints. Nunca usar apenas uma política de pertencimento à organização para dados gerenciais. As políticas atuais não autorizam leituras de perfis de terceiros, mesmo para RH.
+Não existe tabela de pessoas confidenciais ou de indicadores nesta entrega. Ao criar futuramente uma tabela gerencial, incluir `organization_id` NOT NULL, FK, índices e RLS; o predicado obrigatório será `youcon_people_private.has_permission(organization_id, 'people.management.view')`. Dashboards deverão exigir `people.dashboard.view`, inclusive em consultas e endpoints. Nunca usar apenas uma política de pertencimento à organização para dados gerenciais. As políticas atuais não autorizam leituras de perfis de terceiros, mesmo para RH.
 
 A desativação de vínculo ou remoção de papel é lida imediatamente nas novas consultas, sem aguardar renovação de claims de papel. O Auth valida o usuário via rede. Revogação de sessões, exclusão de usuários e configuração de expiração de JWT continuam sendo responsabilidade do operador no Supabase; a autorização em futuras operações críticas deve conferir também a sessão quando necessário.
 
 ## Testes
 
 `tests/rls.test.ts` executa a migração em PGlite (PostgreSQL real em WASM), com os papéis `anon`, `authenticated` e `service_role` e uma função `auth.uid()` compatível com as fixtures. Valida RLS, grants, roles acumulados, revogação, vínculos inativos, anonimato, perfis próprios e isolamento de organizações. `tests/access.test.ts` testa as guardas de rota com o cliente Supabase substituído somente no teste. A aplicação não contém mocks.
+
+Os testes de banco compartilhado também conferem preservação de estruturas/dados/grants/gatilhos/defaults legados, recusa de namespace existente e rollback por falha intermediária. Clientes são testados com fetch interceptado para conferir o header Accept-Profile real enviado pelo SDK; não há conexão remota.
 
 Esse teste não equivale a validar Supabase hospedado: após provisionar, executar os mesmos cenários com usuários de teste, tokens reais, Data API e Auth, além dos advisors. Não usar dados reais nessa validação.

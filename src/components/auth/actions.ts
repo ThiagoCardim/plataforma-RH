@@ -42,7 +42,7 @@ export async function login(
 export async function logout() {
   if (getSupabaseConfig()) {
     const client = await createClient();
-    const { error } = await client.auth.signOut();
+    const { error } = await client.auth.signOut({ scope: "local" });
     if (error)
       throw new Error("Não foi possível encerrar a sessão. Tente novamente.");
   }

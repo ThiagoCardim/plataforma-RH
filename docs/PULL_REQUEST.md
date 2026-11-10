@@ -1,13 +1,11 @@
-# feat: fundação técnica da YouCon People
+# feat: isolar a YouCon People no Supabase compartilhado
 
-A plataforma inicia do zero com login Supabase Auth, sessão SSR, layout responsivo e Home baseada nas permissões do usuário. As rotas da Base de Gente & Gestão e do dashboard exigem permissões exclusivas de RH/Diretoria, inclusive no acesso direto por URL. Vínculos contratuais CLT/estágio/PJ ficam separados de papéis acumuláveis por organização.
+A migração original criava objetos em public/private, incluindo um nome já existente (`public.profiles`). Esta adaptação cria apenas `youcon_people` e `youcon_people_private`, fixa as consultas da aplicação no schema próprio e recusa a execução caso qualquer namespace já exista. A migração antiga foi arquivada fora da cadeia executável; não existe transferência ou exclusão de dados legados.
 
-A migração cria o núcleo multi-organização com RLS em todas as tabelas, grants somente de leitura para usuários e constraint que impede atribuir permissões gerenciais à liderança. Não há cadastro público, autenticação simulada, dados reais, módulos completos ou indicadores fictícios. Sem variáveis Supabase, o login apresenta estado de configuração pendente e as rotas protegidas redirecionam para o login.
+O SQL é transacional, usa timeouts locais e só administra grants, RLS, funções e FKs dos novos objetos. Não cria dependências/FKs/gatilhos em auth.users nem altera configurações de Auth, exposição da API, privilégios padrão globais, tabelas existentes ou histórico de migrações de terceiros. A identidade Auth é validada no provisionamento administrativo; nenhum usuário é criado ou inscrito automaticamente.
 
-Validação: lint, TypeScript estrito, 25 testes em Vitest (incluindo execução de SQL/RLS no PostgreSQL PGlite), build de produção Next.js/Webpack e verificações HTTP passaram. Turbopack foi substituído por Webpack devido à restrição de portas internas do ambiente. Validação visual em navegador e Auth/Data API/advisors no Supabase hospedado permanecem pendentes da configuração externa.
+SSR, browser e proxy usam armazenamento de sessão exclusivo da People, e o logout usa scope local. Um usuário autenticado por outro aplicativo precisa de vínculo/papéis People para obter acesso. A documentação remove orientações de desabilitar signup global ou sincronizar configurações no projeto compartilhado.
 
-Revisar docs/SETUP.md, docs/ARCHITECTURE.md, docs/DELIVERY.md e docs/FILES.md. Não publicar produção ou integrar automaticamente à main.
+Validar com lint, tipos, testes SQL/RLS/PGlite e build. Os testes de convivência usam somente fixtures sintéticas e conferem dados/metadados legados, grants herdados, gatilho existente, transação e colisões. Clientes são testados com HTTP interceptado para verificar o schema usado pelo SDK e o logout local.
 
-Base pretendida: main. Branch: feat/youcon-people-foundation. Envio autorizado pelo proprietário; criar como draft, sem merge ou publicação.
-
-Revisão de arquivos gerados: versionar AGENTS.md conforme orientação do Next.js; ignorar next-env.d.ts e executar next typegen antes do TypeScript, evitando alterações de caminhos de desenvolvimento/produção no Git.
+Escopo: preparação e revisão, sem execução de SQL remoto, configuração de Supabase/Vercel, merge ou produção. Não inclui Etapa 02. Revisar docs/SHARED_DATABASE.md, docs/SETUP.md e docs/DELIVERY.md. Branch local: feat/youcon-people-shared-database, baseada na fundação já submetida no PR #1.

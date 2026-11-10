@@ -1,3 +1,5 @@
+-- HISTORICAL REFERENCE ONLY. DO NOT EXECUTE: assumes an empty public/private schema.
+-- Superseded for unprovisioned environments by the shared-database migration.
 begin;
 create schema if not exists private;
 revoke all on schema private from public;

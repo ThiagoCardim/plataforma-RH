@@ -14,7 +14,7 @@ npm run dev
 
 Em uma execução no seu próprio computador, abra http://localhost:3000. No ambiente cloud do Codex, use a prévia com encaminhamento de porta quando disponível; o localhost da nuvem não é acessível diretamente pelo navegador do seu computador. Sem variáveis válidas, a tela de login mostra **Acesso em preparação**, o formulário fica desabilitado e `/home` redireciona para `/login`. Não existe autenticação simulada, usuário de demonstração ou bypass de acesso. O texto de marca é um espaço reservado; substituir pela identidade oficial quando fornecida.
 
-Para usar a Home autenticada, configure o projeto Supabase, aplique a migração e provisione uma organização e um usuário autorizado conforme [SETUP](docs/SETUP.md). O primeiro vínculo ativo é selecionado por padrão; o seletor permite alternar entre organizações autorizadas.
+Para usar a Home autenticada, seguir o plano revisável em [SETUP](docs/SETUP.md) e [SHARED_DATABASE](docs/SHARED_DATABASE.md). Esta branch prepara a convivência em banco compartilhado; nenhuma migração ou configuração remota foi aplicada. Não executar a migração antiga, sincronizar configurações globais ou aplicar scripts no projeto ativo antes da revisão e aprovação específicas. O primeiro vínculo ativo é selecionado por padrão; o seletor permite alternar entre organizações autorizadas.
 
 ```bash
 npm run lint
@@ -33,11 +33,12 @@ O build usa Webpack porque o Turbopack exige portas internas indisponíveis nest
 - Shell responsivo com sidebar, cabeçalho, menu móvel e Home baseada no contexto real de acesso.
 - Estados de carregamento, vazio, erro, acesso negado e página inexistente.
 - Tokens reutilizáveis e componentes Button, Input e Card seguindo shadcn/ui.
-- Organizações, perfis mínimos, vínculos contratuais, papéis acumuláveis e permissões com RLS e grants restritos.
+- Organizações, perfis mínimos, vínculos contratuais, papéis acumuláveis e permissões em `youcon_people`, com RLS e grants restritos; função auxiliar em `youcon_people_private`.
+- Armazenamento de sessão exclusivo `youcon-people-auth` e logout de sessão local, preservando as sessões dos outros aplicativos.
 - Base de Gente & Gestão e dashboard são apenas espaços vazios protegidos nesta etapa.
 - Testes de guardas do servidor, configuração e SQL/RLS com PGlite. Fixtures de testes não são seeds de aplicação.
 
-Consulte [arquitetura e permissões](docs/ARCHITECTURE.md), [design system](docs/DESIGN_SYSTEM.md), [relatório da entrega](docs/DELIVERY.md) e [inventário de arquivos](docs/FILES.md).
+Consulte [arquitetura e permissões](docs/ARCHITECTURE.md), [design system](docs/DESIGN_SYSTEM.md), [plano para banco compartilhado](docs/SHARED_DATABASE.md), [relatório da entrega](docs/DELIVERY.md) e [inventário de arquivos](docs/FILES.md).
 
 ## Limites
 
