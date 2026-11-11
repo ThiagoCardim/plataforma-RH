@@ -4,7 +4,7 @@ Fundação técnica da plataforma de Gestão de Pessoas da YouCon. Next.js App R
 
 ## Executar e visualizar
 
-Requer Node.js 22 ou superior e npm.
+Requer Node.js 24.x e npm; engines fixa a mesma versão principal usada na Vercel e nas verificações.
 
 ```bash
 npm ci

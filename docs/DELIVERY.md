@@ -27,3 +27,7 @@ Login inicial e acesso Diretoria confirmados pela própria pessoa; logout/renova
 A Preview existente usa o banco ativo compartilhado. Proposta de ambiente isolado em `HOMOLOGATION.md`; criação, custo, migração em homologação e contas sintéticas exigem autorização específica. Não copiar banco, usuários, chaves privadas ou dados de terceiros.
 
 Fundação adequada para iniciar a modelagem da Base Central após autorização; ainda não homologada para operações de escrita ou produção. Revisar necessidade de índice composto no acesso People e dependência de desenvolvimento minimatch em tarefa própria. Não modificar objetos de outros apps para resolver avisos globais.
+
+## Runtime reproduzível
+
+O primeiro build automático da consolidação mostrou que engines >=22 sobrepunha Node 24.x do projeto e selecionava Node 26.x na Vercel. Engines foi restringido a 24.x no package.json e lockfile, alinhando runtime local e remoto. Não muda dependências funcionais nem exige configuração do Supabase.

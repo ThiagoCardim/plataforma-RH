@@ -47,3 +47,7 @@ O deployment Git anterior falhou com STATIC_BUILD_NO_OUT_DIR por saída estátic
 `vercel.json` versiona a configuração de framework/build/install/saída para os próximos deployments. Push da feature branch pode iniciar Preview automática; não implica promoção a produção. A implantação histórica da main (somente README) não foi alterada. Nenhuma mudança de Supabase nesta consolidação.
 
 Estado de retomada em CONTINUE.md e proposta de ambiente separado em HOMOLOGATION.md. Patch e evidências estão sendo consolidados na feature branch, sem merge. Caches, dependências, builds e arquivos de ambiente reais ficam fora do commit.
+
+## Runtime reproduzível
+
+O primeiro build automático da consolidação mostrou que engines >=22 sobrepunha Node 24.x do projeto e selecionava Node 26.x na Vercel. Engines foi restringido a 24.x no package.json e lockfile, alinhando runtime local e remoto. Não muda dependências funcionais nem exige configuração do Supabase.

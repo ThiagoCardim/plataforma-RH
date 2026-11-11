@@ -16,3 +16,7 @@ Atualiza README, setup, entrega e handoff, preserva evidências técnicas sem da
 - Login real inicial confirmado pela pessoa. Renovação/logout reais, todos os papéis e múltiplas organizações continuam pendentes de homologação.
 
 Manter PR #1 aberto como rascunho, sem merge. Sem publicação em produção, nova migração remota, usuário real, alteração de Auth global ou implementação da Base Central. A migração antiga permanece arquivada; não executá-la.
+
+## Runtime reproduzível
+
+O primeiro build automático da consolidação mostrou que engines >=22 sobrepunha Node 24.x do projeto e selecionava Node 26.x na Vercel. Engines foi restringido a 24.x no package.json e lockfile, alinhando runtime local e remoto. Não muda dependências funcionais nem exige configuração do Supabase.

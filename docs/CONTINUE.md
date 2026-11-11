@@ -35,3 +35,7 @@ Configuração corrigida no projeto e em `vercel.json`: Next.js, `npm ci`, `npm 
 Conferir status/rede aplicada e branch remota. `npm ci` pelo lockfile; se o cache padrão não for gravável, usar cache em `work/`. Recriar variáveis ignoradas por integração autorizada, sem exibi-las. Preservar proxy e CA; neste cloud, iniciar com `NODE_USE_ENV_PROXY=1 npm run dev`. O desktop compartilhado falhou por ausência de NODE_REPL_AUTH_TOKEN; não inventar token nem contornar a política.
 
 Preservar `AGENTS.md`. Não alterar Auth global, dados legados, demais schemas, chaves, gatilhos ou Storage. Sem merge, produção, migração remota ou usuário real novo sem autorização específica. Histórico técnico em `CONNECTION_VALIDATION.md` e `PREVIEW_AND_SECURITY.md`.
+
+## Runtime reproduzível
+
+O primeiro build automático da consolidação mostrou que engines >=22 sobrepunha Node 24.x do projeto e selecionava Node 26.x na Vercel. Engines foi restringido a 24.x no package.json e lockfile, alinhando runtime local e remoto. Não muda dependências funcionais nem exige configuração do Supabase.
