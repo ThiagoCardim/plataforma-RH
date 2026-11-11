@@ -42,3 +42,9 @@ As etapas 1 a 5 e a conexão HTTP da etapa 6 já foram concluídas no projeto at
 6. Configuração de URL/chave publishable e validação com Auth/Data API reais e sessões dos apps existentes.
 
 Testes sintéticos não garantem ausência de impacto em todos os aplicativos ativos. O plano preserva estruturas existentes e reduz o acoplamento; a validação em ambiente de teste continua necessária antes do rollout. Nenhum módulo da Etapa 02 foi implementado.
+
+## Regra vigente — Etapa 02 visual
+
+O histórico acima não autoriza novas operações. A decisão permanente é manter o Supabase existente compartilhado, sem novo projeto ou plano de migração para outro banco. Nesta etapa não há autorização para qualquer alteração remota, incluindo registros, tabelas, funções, triggers, RLS, permissões, Auth, Storage, API, extensões ou configurações globais. Não criar objetos em `public`; preservar integralmente as demais aplicações e os schemas `youcon_people` e `youcon_people_private`.
+
+Não executar migrações, seeds, resets ou testes que gravem no projeto compartilhado. Não utilizar credenciais administrativas para contornar essas restrições. Apenas leitura técnica estritamente necessária é permitida. Mudanças futuras dependem de análise de impacto, lista de objetos, SQL proposto, estratégia de recuperação e autorização específica. O `npm test` existente executa SQL exclusivamente em PGlite local efêmero; isso não aplica migrações ao Supabase.

@@ -1,26 +1,29 @@
 import { ChartNoAxesCombined } from "lucide-react";
 import { requirePermission } from "@/modules/access/server";
-import { Card } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Badge } from "@/components/ui/badge";
 export const metadata = { title: "Dashboard gerencial" };
 export default async function Dashboard() {
   await requirePermission("people.dashboard.view");
   return (
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-        RH e Diretoria
+    <div className="space-y-7">
+      <PageHeader
+        eyebrow="Gestão de pessoas"
+        title="Dashboard gerencial"
+        description="Uma visão integrada para apoiar decisões sobre pessoas, desenvolvimento e crescimento."
+      >
+        <Badge>Exclusivo · RH e Diretoria</Badge>
+      </PageHeader>
+      <EmptyState
+        icon={ChartNoAxesCombined}
+        title="Novas perspectivas, em breve"
+        description="Os indicadores ainda não estão disponíveis. Este espaço receberá informações reais quando o módulo gerencial for implementado."
+      />
+      <p className="text-xs text-muted-foreground">
+        Os indicadores serão apresentados conforme as permissões da sua
+        organização.
       </p>
-      <h1 className="mt-3 text-3xl font-semibold">Dashboard gerencial</h1>
-      <Card className="mt-8 p-12 text-center">
-        <ChartNoAxesCombined
-          className="mx-auto mb-4 text-muted-foreground"
-          size={30}
-        />
-        <h2 className="font-semibold">Sem indicadores disponíveis</h2>
-        <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-          Os indicadores serão definidos e conectados a dados reais em uma etapa
-          futura.
-        </p>
-      </Card>
     </div>
   );
 }
