@@ -7,7 +7,7 @@ export const metadata = { title: "Gente & Gestão" };
 export default async function Management() {
   await requirePermission("people.management.view");
   return (
-    <div className="space-y-8">
+    <div className="space-y-7">
       <PageHeader
         eyebrow="Gestão de pessoas"
         title="Gente & Gestão"
@@ -20,7 +20,7 @@ export default async function Management() {
         title="O próximo capítulo da nossa gente"
         description="A base de pessoas será disponibilizada em uma próxima etapa. Os cadastros e as jornadas de gestão ainda não estão disponíveis."
       />
-      <p className="text-center text-xs text-muted-foreground">
+      <p className="text-xs text-muted-foreground">
         Este espaço respeita as permissões da sua organização.
       </p>
     </div>

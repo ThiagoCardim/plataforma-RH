@@ -37,6 +37,22 @@ describe("presentation respects existing access boundaries", () => {
       );
     });
   }
+  for (const displayName of ["Profissional", "  profissional  ", ""]) {
+    it(`uses a neutral greeting for absent or generic name: ${displayName}`, async () => {
+      guard.mockResolvedValue({
+        displayName,
+        organization: { name: "Organização sintética" },
+        membership: { contract_type: "pj" },
+        roles: ["director"],
+        permissions: ["home.view"],
+      } as Awaited<ReturnType<typeof requirePermission>>);
+      const html = renderToStaticMarkup(await Home());
+      expect(html).toContain("Bom ter você aqui.");
+      expect(html).not.toContain("Olá,");
+      expect(html).toContain("Diretoria");
+      expect(html).toContain("Prestador PJ");
+    });
+  }
   it("keeps the management page server guard", async () => {
     guard.mockRejectedValue(new Error("access denied"));
     await expect(Management()).rejects.toThrow("access denied");

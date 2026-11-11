@@ -13,15 +13,17 @@ export function EmptyState({
   label?: string;
 }) {
   return (
-    <Card className="flex flex-col items-center px-6 py-12 text-center md:py-16">
-      <span className="mb-5 flex size-14 items-center justify-center rounded-2xl border bg-background text-primary">
-        <Icon size={25} aria-hidden="true" />
+    <Card className="empty-state-panel flex flex-col gap-5 p-6 sm:flex-row sm:items-start sm:p-8">
+      <span className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-primary/15 bg-accent text-primary">
+        <Icon size={23} aria-hidden="true" />
       </span>
-      <Badge>{label}</Badge>
-      <h2 className="mt-4 text-lg font-semibold tracking-tight">{title}</h2>
-      <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-        {description}
-      </p>
+      <div className="max-w-lg">
+        <Badge className="border-transparent bg-muted">{label}</Badge>
+        <h2 className="mt-3 text-xl font-semibold tracking-tight">{title}</h2>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+          {description}
+        </p>
+      </div>
     </Card>
   );
 }

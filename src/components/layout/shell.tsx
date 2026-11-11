@@ -1,4 +1,11 @@
-import { Building2, ChevronDown, LogOut, ShieldCheck } from "lucide-react";
+import { personalName } from "@/lib/presentation/display-name";
+import {
+  UserRound,
+  Building2,
+  ChevronDown,
+  LogOut,
+  ShieldCheck,
+} from "lucide-react";
 import { Brand } from "@/components/brand";
 import { SidebarFrame } from "./sidebar-frame";
 import { Breadcrumbs } from "./breadcrumbs";
@@ -18,6 +25,7 @@ export function Shell({
   access: Access;
   children: React.ReactNode;
 }) {
+  const name = personalName(access.displayName);
   const navigation = (
     <Navigation
       management={hasPermission(access.permissions, "people.management.view")}
@@ -28,24 +36,21 @@ export function Shell({
     <SidebarFrame
       sidebar={
         <>
-          <div className="sidebar-brand px-3">
+          <div className="sidebar-brand px-2">
             <Brand dark />
           </div>
-          <div className="sidebar-organization my-7 flex items-center gap-3 rounded-xl border border-white/15 px-3 py-3 text-white">
+          <div className="sidebar-organization my-5 flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.025] px-3 py-2.5 text-white">
             <Building2 size={18} className="shrink-0 text-white/70" />
             <div className="sidebar-label min-w-0">
-              <p className="truncate text-xs font-medium">
+              <p className="text-xs font-medium leading-5">
                 {access.organization.name}
               </p>
-              <p className="mt-1 text-xs text-white/60">
-                Seu ambiente de trabalho
-              </p>
+              <p className="mt-1 text-xs text-white/60">Organização atual</p>
             </div>
           </div>
           {navigation}
-          <div className="sidebar-label mt-auto border-t border-white/15 px-3 pt-6 text-xs leading-5 text-white/60">
-            Pessoas no centro.
-            <br />O futuro em construção.
+          <div className="sidebar-label mt-auto border-t border-white/15 px-2 pt-4 text-[11px] leading-5 text-white/60">
+            Pessoas no centro. Sempre.
           </div>
         </>
       }
@@ -58,23 +63,25 @@ export function Shell({
               className="flex list-none items-center gap-3 rounded-lg p-2 focus-visible:ring-2 focus-visible:ring-ring"
             >
               <span className="flex size-9 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground">
-                {access.displayName.slice(0, 1).toUpperCase()}
+                {name ? (
+                  name.slice(0, 1).toUpperCase()
+                ) : (
+                  <UserRound size={17} aria-hidden="true" />
+                )}
               </span>
               <span className="hidden text-left md:block">
                 <span className="block max-w-44 truncate text-xs font-semibold">
-                  {access.displayName}
+                  {name || "Minha conta"}
                 </span>
-                <span className="block text-[10px] text-muted-foreground">
-                  Papéis:{" "}
-                  {access.roles.map((role) => roleLabels[role]).join(" · ") ||
-                    "Sem papel atribuído"}
+                <span className="block text-[11px] text-muted-foreground">
+                  Perfil e acessos
                 </span>
               </span>
               <ChevronDown size={14} className="text-muted-foreground" />
             </summary>
             <div className="absolute right-0 top-14 z-30 w-[min(20rem,calc(100vw-2rem))] rounded-xl border bg-card p-4 shadow-lg">
               <p className="break-words text-sm font-semibold">
-                {access.displayName}
+                {name || "Minha conta"}
               </p>
               <dl className="my-4 space-y-3 text-xs">
                 <div>
@@ -131,11 +138,11 @@ export function Shell({
     >
       <main
         id="main-content"
-        className="mx-auto max-w-[1440px] min-w-0 p-5 md:p-10"
+        className="mx-auto max-w-[1280px] min-w-0 p-5 md:px-9 md:py-8"
       >
         {children}
       </main>
-      <footer className="mx-5 flex flex-wrap items-center justify-between gap-3 border-t py-6 text-[10px] text-muted-foreground md:mx-10">
+      <footer className="mx-5 flex flex-wrap items-center justify-between gap-3 border-t py-4 text-[11px] text-muted-foreground md:mx-10">
         <span>YouCon People · Construindo nossa jornada</span>
         <span className="flex items-center gap-1.5">
           <ShieldCheck size={12} />

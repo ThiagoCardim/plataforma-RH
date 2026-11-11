@@ -17,13 +17,13 @@ export function SidebarFrame({
   return (
     <div className="platform-frame min-h-screen" data-collapsed={collapsed}>
       <aside
-        className="desktop-sidebar fixed inset-y-0 left-0 z-20 hidden flex-col border-r border-white/10 bg-sidebar px-5 py-7 lg:flex"
+        className="desktop-sidebar fixed inset-y-0 left-0 z-20 hidden flex-col border-r border-white/10 bg-sidebar px-4 py-5 lg:flex"
         aria-label="Navegação lateral"
       >
         {sidebar}
         <Button
           variant="ghost"
-          className="mt-5 w-full justify-start text-white/75 hover:bg-white/10 hover:text-white"
+          className="mt-3 w-full justify-start text-white/75 hover:bg-white/10 hover:text-white"
           onClick={() => setCollapsed(!collapsed)}
           aria-expanded={!collapsed}
           aria-label={collapsed ? "Expandir navegação" : "Recolher navegação"}
@@ -64,7 +64,7 @@ export function SidebarFrame({
         </div>
       </dialog>
       <div className="platform-body min-w-0">
-        <header className="flex min-h-20 items-center gap-3 border-b bg-card px-4 sm:px-6 md:px-10">
+        <header className="flex min-h-[68px] items-center gap-3 border-b bg-card px-4 sm:px-6 md:px-10">
           <Button
             ref={trigger}
             variant="outline"
