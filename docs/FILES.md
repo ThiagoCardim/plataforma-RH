@@ -7,6 +7,10 @@ Código da Etapa 01 e adaptação ao banco compartilhado. `docs/FILES.md` é est
 - `AGENTS.md`
 - `README.md`
 - `components.json`
+- `docs/CONTINUE.md`
+- `docs/CONNECTION_VALIDATION.md`
+- `docs/PREVIEW_AND_SECURITY.md`
+- `docs/HOMOLOGATION.md`
 - `docs/ARCHITECTURE.md`
 - `docs/DELIVERY.md`
 - `docs/DESIGN_SYSTEM.md`
@@ -61,6 +65,7 @@ Código da Etapa 01 e adaptação ao banco compartilhado. `docs/FILES.md` é est
 - `tests/support/database.ts`
 - `tsconfig.json`
 - `vitest.config.ts`
+- `vercel.json`
 
 `next-env.d.ts`, `.next/`, `node_modules/`, caches e arquivos `.env` reais não são versionados. O SQL antigo em `docs/history/` é apenas referência e não pode ser executado. Somente o novo SQL de `supabase/migrations/` pertence à cadeia local preparada, aplicada ao remoto após autorização, conforme docs/MIGRATION_APPLIED.md.
 

@@ -1,11 +1,18 @@
-# feat: isolar a YouCon People no Supabase compartilhado
+# feat: consolidar fundação YouCon People, segurança e Previews Next.js
 
-A migração original criava objetos em public/private, incluindo um nome já existente (`public.profiles`). Esta adaptação cria apenas `youcon_people` e `youcon_people_private`, fixa as consultas da aplicação no schema próprio e recusa a execução caso qualquer namespace já exista. A migração antiga foi arquivada fora da cadeia executável; não existe transferência ou exclusão de dados legados.
+A fundação oferece login Supabase real, autorização por organização/papel e Home autenticada. Gente & Gestão e dashboard continuam páginas vazias protegidas, sem processos da Etapa 02.
 
-O SQL é transacional, usa timeouts locais e só administra grants, RLS, funções e FKs dos novos objetos. Não cria dependências/FKs/gatilhos em auth.users nem altera configurações de Auth, exposição da API, privilégios padrão globais, tabelas existentes ou histórico de migrações de terceiros. A identidade Auth é validada no provisionamento administrativo; nenhum usuário é criado ou inscrito automaticamente.
+A migração específica `20261110203914` já foi aplicada e o primeiro acesso já foi vinculado após autorização anterior. HTTP confirmou People exposto, acesso anônimo bloqueado e schema auxiliar não exposto. A pessoa confirmou login e acesso Diretoria na Preview; não foram coletadas credenciais. Nenhuma migração, usuário ou objeto do Supabase foi alterado nesta consolidação.
 
-SSR, browser e proxy usam armazenamento de sessão exclusivo da People, e o logout usa scope local. Um usuário autenticado por outro aplicativo precisa de vínculo/papéis People para obter acesso. A documentação remove orientações de desabilitar signup global ou sincronizar configurações no projeto compartilhado.
+Preserva o patch de segurança Next.js/eslint-config-next 16.4.1 e lockfile. Corrige o projeto Vercel e versiona `vercel.json` para Next.js SSR, `npm ci`, `npm run build` e saída automática, eliminando o erro de saída estática `public`. Mantém proteção Vercel e produção existentes. A Preview inicial foi enviada por API com o patch local; próximos pushes na feature branch usam a configuração versionada.
 
-Validar com lint, tipos, testes SQL/RLS/PGlite e build. Os testes de convivência usam somente fixtures sintéticas e conferem dados/metadados legados, grants herdados, gatilho existente, transação e colisões. Clientes são testados com HTTP interceptado para verificar o schema usado pelo SDK e o logout local.
+Atualiza README, setup, entrega e handoff, preserva evidências técnicas sem dados pessoais e propõe homologação Supabase isolada. A Preview atual usa banco compartilhado ativo; não equivale a homologação. Criar projeto, configurar Auth e aplicar migrações/fixtures em ambiente separado depende de aprovação específica.
 
-Escopo: preparação e revisão, sem execução de SQL remoto, configuração de Supabase/Vercel, merge ou produção. Não inclui Etapa 02. Revisar docs/SHARED_DATABASE.md, docs/SETUP.md e docs/DELIVERY.md. Branch local: feat/youcon-people-shared-database, baseada na fundação já submetida no PR #1.
+## Validação
+
+- Instalação pelo lockfile; lint sem avisos; TypeScript; 39 testes em seis arquivos; build Webpack/Next.js 16.4.1; diff check.
+- Testes locais cobrem guardas, RLS/PGlite, isolamento, grants, revogação e preservação de estruturas legadas sintéticas.
+- Dependências de produção sem vulnerabilidades reportadas. Pendência moderada transitiva minimatch no ferramental de lint.
+- Login real inicial confirmado pela pessoa. Renovação/logout reais, todos os papéis e múltiplas organizações continuam pendentes de homologação.
+
+Manter PR #1 aberto como rascunho, sem merge. Sem publicação em produção, nova migração remota, usuário real, alteração de Auth global ou implementação da Base Central. A migração antiga permanece arquivada; não executá-la.

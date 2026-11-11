@@ -23,8 +23,6 @@ Apenas o SQL revisado foi aplicado por `apply_migration`, sem sincronização de
 - Teste remoto somente de leitura, como authenticated sem identidade: zero perfis/vínculos/catálogos visíveis e permissões home/gerencial negadas.
 - Advisors de segurança: nenhum aviso identificado como relacionado aos schemas People. Avisos de outros objetos não foram corrigidos nem alterados neste escopo; isso não certifica todo o projeto compartilhado.
 
-## Ainda não realizado
+## Atualização posterior — 11/11/2026
 
-Nenhuma alteração em configurações de Auth, Data API, usuários, chaves, provedores, URLs ou Storage. Nenhum merge, deploy ou publicação em produção. Nenhum módulo da Etapa 02.
-
-A aplicação ainda não está conectada funcionalmente. Faltam a inclusão aditiva do schema People na lista atual da Data API, URL/chave publishable no ambiente e provisionamento aprovado de uma identidade existente. Essas etapas exigem seu próprio escopo de autorização, preservando as configurações dos outros projetos. A validação ponta a ponta de login ocorrerá depois dessas configurações.
+O registro acima descreve o instante da migração em 10/11. Posteriormente, com autorização própria, o primeiro vínculo existente foi provisionado, People foi exposto na Data API e a aplicação conectada. HTTP e login inicial na Preview foram confirmados; estado atual em [CONTINUE.md](CONTINUE.md). Não reaplicar migração, resetar banco ou duplicar provisionamento. A conferência da migração/RLS na auditoria foi somente de leitura; nenhum objeto remoto foi alterado na consolidação.

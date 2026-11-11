@@ -1,6 +1,6 @@
 # Plano revisável — convivência no Supabase compartilhado
 
-**Estado atual:** a migração foi aplicada após autorização explícita do usuário. Consulte [MIGRATION_APPLIED.md](MIGRATION_APPLIED.md). API, Auth e provisionamento continuam sem alterações. O plano abaixo foi a base para essa aplicação. A inspeção anterior identificou uma tabela `public.profiles`, uso do schema `private` e um gatilho de criação de perfil em `auth.users`. Não reutilizamos essas estruturas. Este documento não reproduz dados nem definições de terceiros.
+**Estado atual:** a migração foi aplicada após autorização explícita do usuário. Consulte [MIGRATION_APPLIED.md](MIGRATION_APPLIED.md). Posteriormente, o schema People foi exposto, a aplicação conectada e uma identidade existente vinculada após autorização, sem mudanças globais de Auth. Login inicial confirmado na Preview; ver CONTINUE.md. O plano abaixo foi a base para essa aplicação. A inspeção anterior identificou uma tabela `public.profiles`, uso do schema `private` e um gatilho de criação de perfil em `auth.users`. Não reutilizamos essas estruturas. Este documento não reproduz dados nem definições de terceiros.
 
 ## Alterações propostas
 
@@ -32,7 +32,7 @@ A People não cria contas automaticamente. O gatilho existente em Auth pode afet
 
 ## Plano de execução e pendências
 
-As etapas 1 a 3 foram concluídas para a migração específica; as etapas 4 a 6 continuam pendentes.
+As etapas 1 a 5 e a conexão HTTP da etapa 6 já foram concluídas no projeto ativo. Login inicial foi validado pela pessoa; testes completos de renovação/logout e todos os papéis ainda dependem de homologação. A lista abaixo é registro do procedimento, não autorização para repeti-lo.
 
 1. Revisão da migração específica e confirmação de backup recuperável.
 2. Aprovação do usuário para eventual aplicação remota, separada desta preparação.

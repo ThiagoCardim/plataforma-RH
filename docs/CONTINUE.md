@@ -1,25 +1,37 @@
-# Continuidade em novo ambiente Codex
+# Continuidade — fundação YouCon People
 
-Usar o ambiente publicado com o domínio HTTPS `ewdgraxksonxtrylxpbd.supabase.co` permitido e recuperar a branch remota `feat/youcon-people-foundation` do repositório `ThiagoCardim/plataforma-RH`. Não começar pela main: a fundação está em revisão no PR #1, sem merge.
+Estado consolidado em 11/11/2026. Repositório `ThiagoCardim/plataforma-RH`, branch `feat/youcon-people-foundation`, PR #1 aberto como rascunho, sem merge. A main permanece no commit inicial. Não iniciar nova aplicação.
 
-## Estado confirmado
+## Implementado e verificado
 
-- Fundação Next.js/Supabase pronta; adaptação isolada em `youcon_people` e `youcon_people_private`.
-- Migração já aplicada no projeto autorizado. Registro, versão e verificações em `MIGRATION_APPLIED.md`. Não reaplicar ou resetar o banco compartilhado.
-- Primeiro acesso existente foi vinculado à organização YouCon com contrato PJ e papel director. Não criar outra conta Auth nem duplicar o provisionamento. Identificar o vínculo existente somente se necessário, com consultas restritas e sem copiar dados pessoais ao repositório.
-- Usuário informou ter acrescentado `youcon_people` aos schemas expostos. Ainda falta confirmar por HTTP. O schema auxiliar deve permanecer fora da Data API.
-- 39 testes, lint, TypeScript e build passaram na adaptação. Depois da aplicação, 39 testes foram repetidos; RLS e integridade dos metadados/histórico legado foram verificados remotamente.
-- Nesta conversa antiga, a rede permaneceu com a política anterior (sem o host permitido) e os testes HTTP foram bloqueados pelo proxy com 403. Isso não comprova falha do Supabase nem erro da configuração publicada.
+- Next.js/eslint-config-next 16.4.1 e lockfile revisado; patch de segurança preservado.
+- Auth Supabase real, guardas no servidor, contexto de organização, vínculos CLT/estágio/PJ e papéis Profissional/Liderança/RH/Diretoria.
+- Migração `20261110203914` aplicada ao projeto autorizado `ewdgraxksonxtrylxpbd`; ver `MIGRATION_APPLIED.md`. Não reaplicar, resetar ou reconciliar histórico compartilhado.
+- Sete tabelas `youcon_people`, todas com RLS; authenticated tem somente SELECT sujeito às políticas, anon sem acesso. Helper SECURITY INVOKER em `youcon_people_private`.
+- Data API confirmada por HTTP: People exposto, recusa anônima 401/42501; auxiliar fora da API, 406/PGRST106.
+- Primeiro acesso existente já vinculado; organização e papel Diretoria confirmados pela pessoa na Preview. Não criar outra conta nem repetir provisionamento. Nenhum dado pessoal nos documentos.
+- Home e navegação funcionais. Gente & Gestão e dashboard são páginas vazias protegidas, sem cadastro/indicadores. Demais módulos são visuais.
+- Lint, TypeScript, 39 testes em seis arquivos e build passaram; ver `DELIVERY.md`.
 
-## Próximo trabalho
+## Vercel
 
-1. Conferir environment_status no novo ambiente: confirmar a regra de rede aplicada, com a instância correta.
-2. Recuperar a branch indicada e instalar dependências pelo lockfile, se necessário.
-3. Recriar `.env.local` no novo checkout usando URL do projeto autorizado e chave publishable ativa, obtida pela integração Supabase sem exibi-la. Esse arquivo é ignorado e não é enviado ao GitHub.
-4. Fazer uma nova conexão HTTP pelo proxy herdado. Não contornar política de rede. Com Accept-Profile `youcon_people`, distinguir recusa de acesso anônimo (esperada) de schema não exposto (PGRST106). Testar que `youcon_people_private` não está exposto.
-5. Iniciar servidor de desenvolvimento e verificar preview/browser disponíveis seguindo os skills atuais do ambiente. Não orientar abrir o localhost cloud diretamente no computador do usuário.
-6. Validar login com a própria pessoa no navegador, sem pedir senha no chat, sem alterar sua senha nem as sessões dos outros aplicativos. O logout People usa scope local.
+Projeto `plataformarh`, equipe `contato-youconprojets-projects`. Preview inicial READY:
+https://plataformarh-mlshnwglz-contato-youconprojets-projects.vercel.app/login
 
-## Limites
+SSO Vercel preservado. Somente URL/chave publishable configuradas em Preview; `.env.local` ignorado. Existe implantação histórica de produção do commit inicial, sem People. Não promover Preview.
 
-Não alterar configurações globais de Auth, tabelas/dados legados, provedores, chaves, gatilhos existentes ou demais schemas expostos. Não avançar para Etapa 02, fazer merge ou publicar aplicação em produção. Atualizar o estado técnico com evidências e explicar limitações específicas, sem inventar controles da interface.
+Configuração corrigida no projeto e em `vercel.json`: Next.js, `npm ci`, `npm run build`, outputDirectory null. Push da branch pode iniciar nova Preview; registrar o resultado no handoff. Na API Vercel, omitir target cria Preview; não usar target production ou staging.
+
+## Pendências reais
+
+1. Homologação Supabase separada: somente proposta em `HOMOLOGATION.md`, sem criação ou migração autorizada por este documento.
+2. Sessões reais: validar renovação, logout local, preservação das sessões de outros apps, todos os papéis e múltiplas organizações em homologação. Login inicial não equivale a esses testes completos.
+3. Aviso moderado transitivo minimatch no ferramental de lint; zero vulnerabilidades reportadas nas dependências de produção em 11/11. Índice composto da FK de membership_roles recomendado pelo advisor; nenhum SQL de correção aplicado.
+4. Avisos de objetos de outros apps no banco compartilhado ficam com os responsáveis; não alterá-los.
+5. Modelagem da Base Central será próxima entrega autorizada, separando pessoa, conta Auth, unidade e histórico de vínculos. Nada da Etapa 02 funcional foi implementado.
+
+## Retomar em outro ambiente
+
+Conferir status/rede aplicada e branch remota. `npm ci` pelo lockfile; se o cache padrão não for gravável, usar cache em `work/`. Recriar variáveis ignoradas por integração autorizada, sem exibi-las. Preservar proxy e CA; neste cloud, iniciar com `NODE_USE_ENV_PROXY=1 npm run dev`. O desktop compartilhado falhou por ausência de NODE_REPL_AUTH_TOKEN; não inventar token nem contornar a política.
+
+Preservar `AGENTS.md`. Não alterar Auth global, dados legados, demais schemas, chaves, gatilhos ou Storage. Sem merge, produção, migração remota ou usuário real novo sem autorização específica. Histórico técnico em `CONNECTION_VALIDATION.md` e `PREVIEW_AND_SECURITY.md`.

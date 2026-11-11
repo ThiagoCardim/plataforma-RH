@@ -1,6 +1,6 @@
 # Configuração para banco compartilhado
 
-**Status: a migração específica foi aplicada após autorização do usuário.** API, Auth, usuários e conexão da aplicação não foram configurados. Consulte [MIGRATION_APPLIED.md](MIGRATION_APPLIED.md) para o registro da execução. As etapas de revisão abaixo documentam o procedimento; não executar novamente a migração.
+**Status: a migração específica foi aplicada após autorização do usuário.** Data API e conexão da aplicação foram configuradas posteriormente, e o primeiro acesso existente já foi vinculado. Login inicial confirmado pela pessoa na Preview. Não repetir essas operações. Estado atual em [CONTINUE.md](CONTINUE.md); homologação separada ainda é proposta em [HOMOLOGATION.md](HOMOLOGATION.md). Consulte [MIGRATION_APPLIED.md](MIGRATION_APPLIED.md) para o registro da execução. As etapas de revisão abaixo documentam o procedimento; não executar novamente a migração.
 
 ## Revisar antes de qualquer aplicação
 
@@ -10,7 +10,7 @@
 4. Um operador pode revisar o SQL de catálogo somente de leitura em `supabase/review/preflight.sql`: ocupação de schemas, privilégios padrão e gatilhos em Auth. Nenhum gatilho existente é alterado pela migração. Antes de criar qualquer conta, revisar a função do gatilho com o responsável pelos aplicativos existentes.
 5. Não executar `supabase db reset`, `supabase db push`, `supabase config push` ou sincronizações automáticas contra o projeto compartilhado. Ele contém histórico de outros projetos. A aplicação futura deve executar **somente o SQL específico aprovado**, por operador autorizado, com o alvo confirmado, sem reset, limpeza ou reconciliação de migrações de terceiros. Aguardar aprovação explícita antes de qualquer escrita remota.
 
-## Após aprovação e aplicação específica da migração
+## Procedimento de referência — configuração inicial já concluída no ativo
 
 1. Na Data API, **acrescentar** `youcon_people` à lista atual de schemas expostos, preservando todas as entradas existentes. Isso é uma configuração compartilhada e exige revisão própria: a migração não a modifica. Nunca expor `youcon_people_private`; não mudar o search_path global. Os grants mínimos já estão no SQL; não aplicar o exemplo genérico de GRANT ALL para anon da documentação.
 2. Preservar configurações globais de Auth: cadastro público, login anônimo, provedores, URLs, templates, SMTP, rate limits, política de senha e chaves/JWT. O login por senha desta etapa não necessita mudar a Site URL nem adicionar callback. A aplicação não oferece cadastro e um usuário Auth sem vínculo/papel People não recebe acesso, mesmo se o cadastro global estiver habilitado.
@@ -46,4 +46,4 @@ Se `$4` não existir no Auth, a inserção do vínculo falha por FK para o perfi
 
 No seu computador, a aplicação local responde na porta 3000. No Codex cloud, depende de prévia/encaminhamento disponibilizado pelo ambiente; o localhost da nuvem não é acessível diretamente pelo navegador do seu computador.
 
-A implantação na Vercel não foi feita. Não conectar automaticamente a dados ativos, realizar merge ou publicar em produção. Storage permanece sem uso e sem alterações.
+Preview protegida já disponível e conectada ao projeto autorizado; não houve publicação da aplicação People em produção. A configuração Next.js está no projeto Vercel e em vercel.json, sem saída estática personalizada. Não usar o banco ativo para fixtures ou novas escritas de teste; seguir a proposta HOMOLOGATION.md após aprovação. Storage permanece sem uso.
