@@ -1,0 +1,72 @@
+# Inventário da aplicação
+
+Código da Etapa 01 e adaptação ao banco compartilhado. `docs/FILES.md` é este inventário.
+
+- `.env.example`
+- `.gitignore`
+- `AGENTS.md`
+- `README.md`
+- `components.json`
+- `docs/CONTINUE.md`
+- `docs/CONNECTION_VALIDATION.md`
+- `docs/PREVIEW_AND_SECURITY.md`
+- `docs/HOMOLOGATION.md`
+- `docs/ARCHITECTURE.md`
+- `docs/DELIVERY.md`
+- `docs/DESIGN_SYSTEM.md`
+- `docs/PULL_REQUEST.md`
+- `docs/SETUP.md`
+- `docs/SHARED_DATABASE.md`
+- `docs/history/20261013150520_foundation.sql.txt`
+- `eslint.config.mjs`
+- `next.config.ts`
+- `package-lock.json`
+- `package.json`
+- `postcss.config.mjs`
+- `src/app/(platform)/gente-gestao/dashboard/page.tsx`
+- `src/app/(platform)/gente-gestao/page.tsx`
+- `src/app/(platform)/home/page.tsx`
+- `src/app/(platform)/layout.tsx`
+- `src/app/(platform)/loading.tsx`
+- `src/app/acesso-negado/page.tsx`
+- `src/app/error.tsx`
+- `src/app/globals.css`
+- `src/app/layout.tsx`
+- `src/app/login/page.tsx`
+- `src/app/not-found.tsx`
+- `src/app/page.tsx`
+- `src/components/auth/actions.ts`
+- `src/components/auth/login-form.tsx`
+- `src/components/brand.tsx`
+- `src/components/layout/navigation.tsx`
+- `src/components/layout/shell.tsx`
+- `src/components/ui/button.tsx`
+- `src/components/ui/card.tsx`
+- `src/components/ui/input.tsx`
+- `src/lib/env.ts`
+- `src/lib/supabase/client.ts`
+- `src/lib/supabase/options.ts`
+- `src/lib/supabase/server.ts`
+- `src/lib/supabase/types.ts`
+- `src/lib/utils.ts`
+- `src/modules/access/policy.ts`
+- `src/modules/access/server.ts`
+- `src/proxy.ts`
+- `supabase/.gitignore`
+- `supabase/config.toml`
+- `supabase/migrations/20261110203914_youcon_people_shared_database_foundation.sql`
+- `supabase/review/preflight.sql`
+- `tests/access.test.ts`
+- `tests/auth-actions.test.ts`
+- `tests/env.test.ts`
+- `tests/rls.test.ts`
+- `tests/shared-database.test.ts`
+- `tests/supabase-clients.test.ts`
+- `tests/support/database.ts`
+- `tsconfig.json`
+- `vitest.config.ts`
+- `vercel.json`
+
+`next-env.d.ts`, `.next/`, `node_modules/`, caches e arquivos `.env` reais não são versionados. O SQL antigo em `docs/history/` é apenas referência e não pode ser executado. Somente o novo SQL de `supabase/migrations/` pertence à cadeia local preparada, aplicada ao remoto após autorização, conforme docs/MIGRATION_APPLIED.md.
+
+- `docs/MIGRATION_APPLIED.md`
