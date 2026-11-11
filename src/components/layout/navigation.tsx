@@ -19,8 +19,8 @@ export function Navigation({
   dashboard: boolean;
 }) {
   const pathname = usePathname();
-  const links = [
-    { href: "/home", label: "Início", Icon: Home },
+  const general = [{ href: "/home", label: "Início", Icon: Home }];
+  const managerial = [
     ...(management
       ? [{ href: "/gente-gestao", label: "Gente & Gestão", Icon: Users }]
       : []),
@@ -35,50 +35,73 @@ export function Navigation({
       : []),
   ];
   return (
-    <nav aria-label="Navegação principal">
-      <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/35">
-        Seu espaço
-      </p>
-      <div className="space-y-1">
-        {links.map(({ href, label, Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            aria-current={pathname === href ? "page" : undefined}
-            className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors",
-              pathname === href
-                ? "bg-white/10 text-white"
-                : "text-white/60 hover:bg-white/5 hover:text-white",
-            )}
-          >
-            <Icon
-              size={18}
-              className={pathname === href ? "text-orange-400" : ""}
-            />
-            {label}
-          </Link>
+    <nav
+      aria-label="Navegação principal"
+      className="min-h-0 flex-1 overflow-y-auto pb-6"
+    >
+      {[
+        { title: "Área geral", links: general },
+        { title: "Gestão de pessoas", links: managerial },
+      ]
+        .filter((group) => group.links.length)
+        .map((group) => (
+          <div key={group.title} className="mb-6">
+            <p className="sidebar-label mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">
+              {group.title}
+            </p>
+            <div className="space-y-1">
+              {group.links.map(({ href, label, Icon }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  title={label}
+                  aria-label={label}
+                  aria-current={pathname === href ? "page" : undefined}
+                  className={cn(
+                    "sidebar-link flex min-h-11 items-center gap-3 rounded-lg border border-transparent px-3 py-3 text-sm transition-colors",
+                    pathname === href
+                      ? "border-white/10 bg-white/10 font-medium text-white"
+                      : "text-white/75 hover:bg-white/5 hover:text-white",
+                  )}
+                >
+                  <Icon
+                    size={19}
+                    aria-hidden="true"
+                    className={cn(
+                      "shrink-0",
+                      pathname === href && "text-orange-400",
+                    )}
+                  />
+                  <span className="sidebar-label">{label}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
         ))}
-      </div>
-      <p className="mb-3 mt-9 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/35">
-        Em construção
-      </p>
-      <div className="space-y-1">
-        {[
-          { label: "Comunicação", Icon: MessageSquare },
-          { label: "Desenvolvimento", Icon: TrendingUp },
-          { label: "Academy", Icon: GraduationCap },
-          { label: "Cultura", Icon: Heart },
-        ].map(({ label, Icon }) => (
-          <span
-            key={label}
-            className="flex items-center gap-3 px-3 py-3 text-sm text-white/35"
-          >
-            <Icon size={18} />
-            {label}
-            <span className="ml-auto text-[9px] uppercase">Em breve</span>
-          </span>
-        ))}
+      <div className="future-navigation">
+        <p className="sidebar-label mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">
+          Próximos espaços
+        </p>
+        <div className="space-y-1">
+          {[
+            { label: "Comunicação", Icon: MessageSquare },
+            { label: "Desenvolvimento", Icon: TrendingUp },
+            { label: "YouCon Academy", Icon: GraduationCap },
+            { label: "Cultura", Icon: Heart },
+          ].map(({ label, Icon }) => (
+            <span
+              key={label}
+              title={`${label} · Em breve`}
+              className="sidebar-link flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/65"
+            >
+              <Icon size={18} className="shrink-0" aria-hidden="true" />
+              <span className="sidebar-label">{label}</span>
+              <span className="sidebar-label ml-auto shrink-0 whitespace-nowrap rounded border border-white/15 px-1.5 py-0.5 text-[10px]">
+                Em breve
+              </span>
+            </span>
+          ))}
+        </div>
       </div>
     </nav>
   );

@@ -39,3 +39,7 @@ Preservar `AGENTS.md`. Não alterar Auth global, dados legados, demais schemas, 
 ## Runtime reproduzível
 
 O primeiro build automático da consolidação mostrou que engines >=22 sobrepunha Node 24.x do projeto e selecionava Node 26.x na Vercel. Engines foi restringido a 24.x no package.json e lockfile, alinhando runtime local e remoto. Não muda dependências funcionais nem exige configuração do Supabase.
+
+## Etapa 02 — evolução visual
+
+A etapa visual parte da fundação `19cae87` na branch `feat/youcon-people-design-system`. Consulte [entrega da Etapa 02](STAGE_02_DELIVERY.md). A autorização atual exige manter o Supabase compartilhado existente e proíbe qualquer alteração nele; propostas históricas de criar homologação separada não são o plano desta etapa. Não criar novo projeto, executar migração remota ou provisionar registros. AGENTS.md e SHARED_DATABASE.md registram a regra permanente.

@@ -2,7 +2,8 @@ import Link from "next/link";
 import {
   ArrowRight,
   ArrowUpRight,
-  BookOpen,
+  UserRound,
+  ChartNoAxesCombined,
   GraduationCap,
   Heart,
   MessageSquare,
@@ -19,7 +20,9 @@ import {
   roleLabels,
 } from "@/modules/access/policy";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
 export const metadata = { title: "Início" };
 const icons = {
   communication: MessageSquare,
@@ -31,24 +34,14 @@ export default async function Home() {
   const access = await requirePermission("home.view");
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="mb-2 text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-            Conexão · Desenvolvimento · Cultura
-          </p>
-          <h1 className="text-3xl font-semibold tracking-tight">
-            Olá, {access.displayName.split(" ")[0]}
-            <span className="text-primary">.</span>
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Bem-vindo ao seu espaço na YouCon.
-          </p>
-        </div>
-        <span className="rounded-full border bg-card px-3 py-1.5 text-xs text-muted-foreground">
-          {access.organization.name}
-        </span>
-      </div>
-      <section className="relative overflow-hidden rounded-2xl bg-sidebar p-7 text-white md:p-10">
+      <PageHeader
+        eyebrow="Seu dia, suas conexões"
+        title={`Olá, ${access.displayName.split(" ")[0]}.`}
+        description="Bem-vindo ao seu espaço de conexão, desenvolvimento e crescimento."
+      >
+        <Badge>{access.organization.name}</Badge>
+      </PageHeader>
+      <section className="relative overflow-hidden rounded-2xl bg-sidebar p-6 text-white md:p-8">
         <div
           aria-hidden="true"
           className="absolute -right-20 -top-32 size-96 rotate-12 rounded-[90px] border-[50px] border-white/[0.03]"
@@ -56,9 +49,9 @@ export default async function Home() {
         <div className="relative max-w-lg">
           <span className="mb-5 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-400">
             <Sparkles size={14} />
-            Nossa jornada está começando
+            Juntos, construímos o futuro
           </span>
-          <h2 className="text-3xl font-medium leading-tight tracking-tight md:text-4xl">
+          <h2 className="text-2xl font-medium leading-tight tracking-tight md:text-3xl">
             Pessoas que conectam.
             <br />
             Projetos que transformam.
@@ -69,7 +62,7 @@ export default async function Home() {
           </p>
           <a
             href="#seu-espaco"
-            className="mt-7 inline-flex items-center gap-3 text-xs font-semibold text-orange-400"
+            className="mt-5 inline-flex items-center gap-3 text-xs font-semibold text-orange-400"
           >
             Conheça seu espaço
             <ArrowRight size={16} />
@@ -79,12 +72,82 @@ export default async function Home() {
           O futuro se constrói com gente
         </span>
       </section>
-      <section id="seu-espaco" className="grid gap-6 xl:grid-cols-[1fr_320px]">
+      <section aria-labelledby="quick-access-title">
+        <div className="mb-4">
+          <h2 id="quick-access-title" className="text-lg font-semibold">
+            Acessos rápidos
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Os espaços disponíveis para você.
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          <a
+            href="#meu-espaco"
+            className="group rounded-2xl border bg-card p-5 shadow-[var(--shadow-surface)] transition-colors hover:border-primary/50"
+          >
+            <UserRound
+              className="mb-5 text-primary"
+              size={22}
+              aria-hidden="true"
+            />
+            <span className="flex items-center justify-between text-sm font-semibold">
+              Meu Espaço
+              <ArrowUpRight size={17} aria-hidden="true" />
+            </span>
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">
+              Consulte seu vínculo e seus acessos.
+            </p>
+          </a>
+          {hasPermission(access.permissions, "people.management.view") && (
+            <Link
+              href="/gente-gestao"
+              className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-surface)] transition-colors hover:border-primary/50"
+            >
+              <Users
+                className="mb-5 text-primary"
+                size={22}
+                aria-hidden="true"
+              />
+              <span className="flex items-center justify-between text-sm font-semibold">
+                Gente & Gestão
+                <ArrowUpRight size={17} aria-hidden="true" />
+              </span>
+              <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                Conheça o espaço de gestão de pessoas.
+              </p>
+              <Badge className="mt-3">Módulo em preparação</Badge>
+            </Link>
+          )}
+          {hasPermission(access.permissions, "people.dashboard.view") && (
+            <Link
+              href="/gente-gestao/dashboard"
+              className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-surface)] transition-colors hover:border-primary/50"
+            >
+              <ChartNoAxesCombined
+                className="mb-5 text-primary"
+                size={22}
+                aria-hidden="true"
+              />
+              <span className="flex items-center justify-between text-sm font-semibold">
+                Dashboard gerencial
+                <ArrowUpRight size={17} aria-hidden="true" />
+              </span>
+              <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                O futuro espaço de visão gerencial.
+              </p>
+              <Badge className="mt-3">Módulo em preparação</Badge>
+            </Link>
+          )}
+        </div>
+      </section>
+      <section
+        id="seu-espaco"
+        className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]"
+      >
         <div>
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">
-              Seu espaço, suas possibilidades
-            </h2>
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold">Novas possibilidades</h2>
             <span className="text-xs text-muted-foreground">Em construção</span>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -92,7 +155,7 @@ export default async function Home() {
               const Icon = icons[module.icon];
               return (
                 <Card key={module.name} className="p-5">
-                  <div className="mb-5 flex items-center justify-between">
+                  <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
                     <span className="rounded-lg bg-muted p-2.5">
                       <Icon size={20} className="text-muted-foreground" />
                     </span>
@@ -108,28 +171,14 @@ export default async function Home() {
               );
             })}
           </div>
-          {hasPermission(access.permissions, "people.management.view") && (
-            <Link
-              href="/gente-gestao"
-              className="mt-4 flex items-center gap-4 rounded-xl border border-orange-200 bg-accent p-5"
-            >
-              <Users className="text-primary" size={22} />
-              <div className="flex-1">
-                <h3 className="text-sm font-semibold">
-                  Base de Gente & Gestão
-                </h3>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Espaço exclusivo para RH e Diretoria.
-                </p>
-              </div>
-              <ArrowUpRight className="text-primary" size={18} />
-            </Link>
-          )}
         </div>
         <div className="space-y-5">
-          <Card>
+          <Card id="meu-espaco" className="scroll-mt-6">
             <CardHeader>
-              <CardTitle>Seu vínculo com a YouCon</CardTitle>
+              <CardTitle>Meu Espaço</CardTitle>
+              <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                Seu vínculo e seus acessos atuais.
+              </p>
             </CardHeader>
             <CardContent>
               <dl className="space-y-4 text-xs">
@@ -169,34 +218,26 @@ export default async function Home() {
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <BookOpen size={22} className="mb-4 text-primary" />
-              <h2 className="text-sm font-semibold">
-                Uma construção em etapas
-              </h2>
+              <UserRound size={22} className="mb-4 text-primary" />
+              <h2 className="text-sm font-semibold">Seu espaço vai crescer</h2>
               <p className="mt-2 text-xs leading-6 text-muted-foreground">
-                Este é o início da YouCon People. Novos espaços serão
-                disponibilizados conforme a evolução da plataforma.
+                Novas informações pessoais estarão disponíveis aqui em etapas
+                futuras. Nenhum cadastro adicional está disponível no momento.
               </p>
             </CardContent>
           </Card>
         </div>
       </section>
-      <Card className="flex flex-col items-center p-8 text-center">
-        <MessageSquare size={25} className="mb-4 text-muted-foreground" />
-        <h2 className="text-sm font-semibold">Nenhuma comunicação publicada</h2>
-        <p className="mt-2 max-w-sm text-xs leading-5 text-muted-foreground">
-          Quando o módulo de comunicação estiver disponível, você encontrará as
-          novidades da YouCon aqui.
-        </p>
-      </Card>
-      {hasPermission(access.permissions, "people.dashboard.view") && (
-        <Button asChild variant="outline">
-          <Link href="/gente-gestao/dashboard">
-            Espaço do dashboard gerencial
-            <ArrowRight />
-          </Link>
-        </Button>
-      )}
+      <section aria-labelledby="communication-title" className="space-y-4">
+        <h2 id="communication-title" className="text-lg font-semibold">
+          Comunicação interna
+        </h2>
+        <EmptyState
+          icon={MessageSquare}
+          title="Um lugar para ficar por dentro"
+          description="O módulo de comunicação ainda não está disponível. Quando estiver pronto, as novidades da YouCon terão espaço aqui."
+        />
+      </section>
     </div>
   );
 }

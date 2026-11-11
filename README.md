@@ -55,3 +55,7 @@ O login real inicial foi validado, mas renovação de sessão, logout real e cen
 A Preview atual usa o banco compartilhado ativo e **não é um banco de homologação**. Novas escritas e fixtures devem ser validadas em ambiente separado conforme a [proposta de homologação](docs/HOMOLOGATION.md), ainda não provisionado. Não copiar `.env.local`, usuários ou dados pessoais do banco ativo para testes.
 
 No ambiente cloud atual, usar `NODE_USE_ENV_PROXY=1 npm run dev` com o proxy herdado. O desktop compartilhado falhou no provisionamento; a Preview HTTPS é a alternativa disponível. Nunca pedir senha no chat.
+
+## Etapa 02 — Design system e experiência visual
+
+Evolução incremental da fundação, sem alterações no Supabase compartilhado, autenticação ou permissões. Sidebar recolhível, drawer móvel, breadcrumbs, perfil com vínculo/papéis explícitos, Home com acessos permitidos e estados vazios gerenciais. Consulte o [relatório da etapa visual](docs/STAGE_02_DELIVERY.md) e os [componentes e tokens](docs/DESIGN_SYSTEM.md). As restrições atuais em AGENTS.md/SHARED_DATABASE.md prevalecem sobre propostas históricas de homologação: manter o projeto existente; nenhum novo projeto ou migração para outro banco.

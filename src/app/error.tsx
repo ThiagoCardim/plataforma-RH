@@ -1,4 +1,5 @@
 "use client";
+import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 export default function ErrorPage({
   reset,
@@ -7,8 +8,8 @@ export default function ErrorPage({
   reset: () => void;
 }) {
   return (
-    <div
-      role="alert"
+    <Alert
+      variant="error"
       className="mx-auto my-16 max-w-md rounded-xl border bg-card p-8"
     >
       <h1 className="text-xl font-semibold">
@@ -18,6 +19,6 @@ export default function ErrorPage({
         Tente novamente. Se o problema continuar, entre em contato com o RH.
       </p>
       <Button onClick={reset}>Tentar novamente</Button>
-    </div>
+    </Alert>
   );
 }

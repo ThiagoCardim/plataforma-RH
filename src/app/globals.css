@@ -55,3 +55,103 @@
     background: #ffd6bf;
   }
 }
+
+/* Layout and interaction tokens shared by current and future modules. */
+:root {
+  --sidebar-width: 17rem;
+  --sidebar-width-collapsed: 5.5rem;
+  --space-page: clamp(1.25rem, 3vw, 2.5rem);
+  --shadow-surface: 0 2px 8px rgb(24 26 24 / 3%);
+  --radius-surface: 1rem;
+  --font-sans: "Segoe UI", Arial, Helvetica, sans-serif;
+}
+@layer base {
+  body {
+    font-family: var(--font-sans);
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 4px;
+  }
+  h1,
+  h2,
+  h3,
+  p,
+  dd {
+    overflow-wrap: anywhere;
+  }
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--primary);
+  }
+  select,
+  textarea {
+    border: 1px solid var(--input);
+    border-radius: var(--radius);
+    background: var(--card);
+    padding: 0.625rem 0.75rem;
+    font: inherit;
+  }
+  select:disabled,
+  textarea:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+  [aria-invalid="true"] {
+    border-color: var(--destructive);
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+}
+@media (min-width: 1024px) {
+  .desktop-sidebar {
+    width: var(--sidebar-width);
+  }
+  .platform-body {
+    padding-left: var(--sidebar-width);
+  }
+  .platform-frame[data-collapsed="true"] .desktop-sidebar {
+    width: var(--sidebar-width-collapsed);
+    padding-inline: 1rem;
+  }
+  .platform-frame[data-collapsed="true"] .platform-body {
+    padding-left: var(--sidebar-width-collapsed);
+  }
+  .platform-frame[data-collapsed="true"] .desktop-sidebar .sidebar-label {
+    display: none;
+  }
+  .platform-frame[data-collapsed="true"] .desktop-sidebar .sidebar-link {
+    justify-content: center;
+    padding-inline: 0.5rem;
+  }
+  .platform-frame[data-collapsed="true"]
+    .desktop-sidebar
+    .sidebar-organization {
+    justify-content: center;
+    padding-inline: 0.5rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .platform-frame[data-collapsed="true"] .sidebar-brand {
+    padding-inline: 0;
+    text-align: center;
+  }
+  .platform-frame[data-collapsed="true"] .sidebar-brand span {
+    font-size: 0.75rem;
+  }
+  .platform-frame[data-collapsed="true"] .sidebar-brand span span,
+  .platform-frame[data-collapsed="true"] .sidebar-brand p {
+    display: none;
+  }
+}
