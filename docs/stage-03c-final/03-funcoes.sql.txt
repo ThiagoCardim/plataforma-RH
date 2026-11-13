@@ -1,0 +1,318 @@
+-- PROPOSTA. RPCs limitadas; nenhum grant de escrita direta para clientes.
+begin;
+set local lock_timeout='3s';
+set local statement_timeout='30s';
+create function youcon_people_private.has_role(o uuid,u uuid,r text) returns boolean language sql stable set search_path='' as $$
+ select exists(select 1 from youcon_people.memberships m join youcon_people.membership_roles mr on mr.membership_id=m.id and mr.user_id=m.user_id where m.organization_id=o and m.user_id=u and m.active and mr.role_code=r)
+$$;
+create function youcon_people_private.eligible(o uuid,u uuid) returns boolean language sql stable set search_path='' as $$
+ select u is not null and exists(select 1 from youcon_people.memberships m where m.organization_id=o and m.user_id=u and m.active) and (
+ exists(select 1 from youcon_people.person_accounts a join youcon_people.engagements e on e.organization_id=a.organization_id and e.person_id=a.person_id where a.organization_id=o and a.user_id=u and a.valid_from<=statement_timestamp() and (a.valid_to is null or a.valid_to>statement_timestamp()) and e.state='confirmed' and e.start_date <= (statement_timestamp() at time zone 'America/Sao_Paulo')::date and (coalesce(e.end_date,e.planned_end_date) is null or coalesce(e.end_date,e.planned_end_date) >= (statement_timestamp() at time zone 'America/Sao_Paulo')::date) and e.access_closed_at is null)
+ or exists(select 1 from youcon_people.access_exceptions x where x.organization_id=o and x.user_id=u and x.valid_from<=statement_timestamp() and x.valid_to>statement_timestamp() and x.revoked_at is null and exists(select 1 from youcon_people.person_accounts a where a.organization_id=o and a.person_id=x.person_id and a.user_id=u and a.valid_from<=statement_timestamp() and (a.valid_to is null or a.valid_to>statement_timestamp()))))
+$$;
+create function youcon_people_private.can(o uuid,c text) returns boolean language sql stable set search_path='' as $$
+ select youcon_people_private.eligible(o,auth.uid()) and (
+ exists(select 1 from youcon_people.memberships m join youcon_people.membership_roles mr on mr.membership_id=m.id and mr.user_id=m.user_id join youcon_people.role_permissions rp on rp.role_code=mr.role_code where m.organization_id=o and m.user_id=auth.uid() and m.active and rp.permission_code=c)
+ or exists(select 1 from youcon_people.special_grants g where g.organization_id=o and g.user_id=auth.uid() and g.capability=c and g.valid_until>statement_timestamp()))
+$$;
+create function youcon_people_private.require_cap(o uuid,c text) returns void language plpgsql set search_path='' as $$
+begin if not youcon_people_private.can(o,c) then raise exception 'not authorized' using errcode='42501'; end if; end $$;
+create function youcon_people_private.contact(o uuid,p uuid,k text,s text,v text) returns void language plpgsql set search_path='' as $$
+begin
+ if s='private' then perform youcon_people_private.require_cap(o,'people.private.write'); end if;
+ if length(v)>160 or (k='email' and v !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$') or (k='phone' and v !~ '^[0-9 +()-]{8,24}$') then raise exception 'invalid contact'; end if;
+ update youcon_people.person_contacts set is_primary=false where organization_id=o and person_id=p and kind=k and scope=s and is_primary;
+ insert into youcon_people.person_contacts(organization_id,person_id,kind,scope,value,is_primary,created_by) values(o,p,k,s,v,true,auth.uid());
+end $$;
+create function youcon_people_private.command(op text,o uuid,k uuid,d jsonb) returns jsonb language plpgsql set search_path='' as $$
+declare u uuid:=auth.uid(); result jsonb; receipt youcon_people.operation_receipts; p youcon_people.persons; e youcon_people.engagements; a youcon_people.engagement_assignments; req youcon_people.change_requests;
+ id uuid; person uuid; start_day date; end_day date; n bigint; field text; value text; allowed text[]; today date:=(statement_timestamp() at time zone 'America/Sao_Paulo')::date;
+begin
+ if u is null or k is null or jsonb_typeof(d) is distinct from 'object' then raise exception 'invalid command'; end if;
+ perform youcon_people_private.lock_org(o);
+ -- Authorization is checked before replay: a revoked actor cannot obtain old results.
+ if op='submit_request' then perform youcon_people_private.require_cap(o,'people.request.submit');
+ elsif op='review_request' then
+  if not ((youcon_people_private.has_role(o,u,'hr') and youcon_people_private.can(o,'people.request.review')) or (youcon_people_private.has_role(o,u,'director') and youcon_people_private.can(o,'people.request.review_hr'))) then raise exception 'not authorized' using errcode='42501'; end if;
+ elsif op='associate_account' then perform youcon_people_private.require_cap(o,'people.accounts.link');
+ elsif op='access_exception' then perform youcon_people_private.require_cap(o,'people.exception.manage');
+ elsif op in ('create_engagement','close_engagement','move_engagement') then perform youcon_people_private.require_cap(o,'people.engagement.write');
+ else perform youcon_people_private.require_cap(o,'people.person.write'); end if;
+ if op not in ('submit_request','review_request') and not (youcon_people_private.has_role(o,u,'hr') or youcon_people_private.has_role(o,u,'director')) then raise exception 'management only' using errcode='42501'; end if;
+ allowed:=case op
+ when 'create_person' then array['full_name','display_name']
+ when 'edit_person' then array['person_id','version','full_name','display_name','kind','scope','value','reason']
+ when 'create_engagement' then array['person_id','type','start','end','unit_id','department_id','position_id','leader_id','detail']
+ when 'close_engagement' then array['engagement_id','version','end','reason']
+ when 'move_engagement' then array['engagement_id','version','date','unit_id','department_id','position_id','leader_id','reason']
+ when 'associate_account' then array['person_id','user_id','from','to']
+ when 'submit_request' then array['person_id','version','field','value']
+ when 'review_request' then array['request_id','approve','reason']
+ when 'access_exception' then array['person_id','user_id','from','to','reason']
+ else null end;
+ if allowed is null or exists(select 1 from jsonb_object_keys(d) t(key) where not t.key=any(allowed)) then raise exception 'unknown command or forbidden field'; end if;
+ select * into receipt from youcon_people.operation_receipts where organization_id=o and actor_user_id=u and idempotency_key=k;
+ if found then
+  if receipt.command<>op or receipt.payload<>jsonb_build_object('sha256',encode(sha256(convert_to(d::text,'UTF8')),'hex')) then raise exception 'idempotency key reused'; end if;
+  return receipt.result;
+ end if;
+ if op='create_person' then
+  id:=gen_random_uuid(); insert into youcon_people.persons(id,organization_id,internal_code,full_name,display_name,created_by) values(id,o,'YC-'||id::text,trim(d->>'full_name'),nullif(trim(d->>'display_name'),''),u);
+ elsif op='edit_person' then
+  if nullif(trim(d->>'reason'),'') is null then raise exception 'edit reason required'; end if;
+  select * into strict p from youcon_people.persons where organization_id=o and persons.id=(d->>'person_id')::uuid for update;
+  if exists(select 1 from youcon_people.person_accounts x where x.organization_id=o and x.person_id=p.id and x.user_id=u and x.valid_from<=statement_timestamp() and (x.valid_to is null or x.valid_to>statement_timestamp())) then raise exception 'own personal changes require another reviewer'; end if;
+  if p.version is distinct from (d->>'version')::bigint or not d ? 'version' then raise exception 'version conflict'; end if;
+  if d ? 'kind' then perform youcon_people_private.contact(o,p.id,d->>'kind',coalesce(d->>'scope','professional'),d->>'value'); end if;
+  update youcon_people.persons set full_name=case when d ? 'full_name' then trim(d->>'full_name') else full_name end,display_name=case when d ? 'display_name' then d->>'display_name' else display_name end,version=version+1 where organization_id=o and persons.id=p.id;
+  id:=p.id;
+ elsif op='create_engagement' then
+  person:=(d->>'person_id')::uuid; start_day:=(d->>'start')::date; end_day:=(d->>'end')::date;
+  perform 1 from youcon_people.persons where organization_id=o and persons.id=person for update;
+  if not found then raise exception 'person unavailable'; end if;
+  if d ? 'detail' and (jsonb_typeof(d->'detail')<>'object' or exists(select 1 from jsonb_object_keys(d->'detail') f(key) where not f.key=any(case d->>'type' when 'clt' then array['term_type','registration_code'] when 'intern' then array['institution','course','agreement_reference','supervisor_id'] when 'pj' then array['legal_name','contract_reference','service_scope'] else array[]::text[] end))) then raise exception 'invalid detail'; end if;
+  id:=gen_random_uuid(); insert into youcon_people.engagements(id,organization_id,person_id,contract_type,start_date,planned_end_date,state,created_by) values(id,o,person,d->>'type',start_day,end_day,'confirmed',u);
+  if d->>'type'='clt' then insert into youcon_people.engagement_clt(organization_id,engagement_id,term_type,registration_code,created_by) values(o,id,d#>>'{detail,term_type}',d#>>'{detail,registration_code}',u);
+  elsif d->>'type'='intern' then insert into youcon_people.engagement_intern(organization_id,engagement_id,institution,course,agreement_reference,supervisor_engagement_id,created_by) values(o,id,d#>>'{detail,institution}',d#>>'{detail,course}',d#>>'{detail,agreement_reference}',(d#>>'{detail,supervisor_id}')::uuid,u);
+  elsif d->>'type'='pj' then
+   person:=null;
+   if d#>>'{detail,legal_name}' is not null then insert into youcon_people.service_providers(organization_id,legal_name,created_by) values(o,d#>>'{detail,legal_name}',u) returning service_providers.id into person; end if;
+   insert into youcon_people.engagement_pj(organization_id,engagement_id,service_provider_id,contract_reference,service_scope,created_by) values(o,id,person,d#>>'{detail,contract_reference}',d#>>'{detail,service_scope}',u);
+  end if;
+  insert into youcon_people.engagement_assignments(organization_id,engagement_id,unit_id,department_id,position_id,leader_engagement_id,valid_from,valid_to,reason,created_by) values(o,id,(d->>'unit_id')::uuid,(d->>'department_id')::uuid,(d->>'position_id')::uuid,(d->>'leader_id')::uuid,start_day,end_day+1,'Início do vínculo',u);
+ elsif op in ('close_engagement','move_engagement') then
+  select * into strict e from youcon_people.engagements where organization_id=o and engagements.id=(d->>'engagement_id')::uuid for update;
+  if not d ? 'version' or e.version is distinct from (d->>'version')::bigint then raise exception 'version conflict'; end if;
+  if nullif(trim(d->>'reason'),'') is null then raise exception 'reason required'; end if;
+  if e.end_date is not null then raise exception 'contract closed'; end if;
+  select * into strict a from youcon_people.engagement_assignments where organization_id=o and engagement_id=e.id order by valid_from desc limit 1 for update;
+  if op='move_engagement' then
+   start_day:=(d->>'date')::date;
+   if start_day is null or start_day<=a.valid_from or start_day>today then raise exception 'movement must be after latest start and not future'; end if;
+   update youcon_people.engagement_assignments set valid_to=start_day where organization_id=o and engagement_assignments.id=a.id;
+   insert into youcon_people.engagement_assignments(organization_id,engagement_id,unit_id,department_id,position_id,leader_engagement_id,valid_from,valid_to,reason,supersedes_id,created_by) values(o,e.id,(d->>'unit_id')::uuid,(d->>'department_id')::uuid,(d->>'position_id')::uuid,(d->>'leader_id')::uuid,start_day,coalesce(e.end_date,e.planned_end_date)+1,d->>'reason',a.id,u);
+   update youcon_people.engagements set version=version+1 where organization_id=o and engagements.id=e.id;
+  else
+   end_day:=(d->>'end')::date;
+   if end_day is null or end_day<a.valid_from then raise exception 'end before last assignment'; end if;
+   update youcon_people.engagement_assignments set valid_to=end_day+1 where organization_id=o and engagement_assignments.id=a.id;
+   update youcon_people.engagements set end_date=end_day,access_closed_at=case when end_day<=today then statement_timestamp() end,version=version+1 where organization_id=o and engagements.id=e.id;
+  end if;
+  id:=e.id;
+ elsif op='associate_account' then
+  id:=gen_random_uuid(); insert into youcon_people.person_accounts(id,organization_id,person_id,user_id,valid_from,valid_to,created_by) values(id,o,(d->>'person_id')::uuid,(d->>'user_id')::uuid,(d->>'from')::timestamptz,(d->>'to')::timestamptz,u);
+ elsif op='access_exception' then
+  if (d->>'user_id')::uuid=u then raise exception 'no self exception'; end if;
+  if not exists(select 1 from youcon_people.person_accounts x where x.organization_id=o and x.person_id=(d->>'person_id')::uuid and x.user_id=(d->>'user_id')::uuid and x.valid_from<=(d->>'from')::timestamptz and (x.valid_to is null or x.valid_to>=(d->>'to')::timestamptz)) then raise exception 'association required for exception'; end if;
+  id:=gen_random_uuid(); insert into youcon_people.access_exceptions(id,organization_id,person_id,user_id,valid_from,valid_to,reason,approved_by,created_by) values(id,o,(d->>'person_id')::uuid,(d->>'user_id')::uuid,(d->>'from')::timestamptz,(d->>'to')::timestamptz,d->>'reason',u,u);
+ elsif op='submit_request' then
+  select * into strict p from youcon_people.persons where organization_id=o and persons.id=(d->>'person_id')::uuid;
+  if not exists(select 1 from youcon_people.person_accounts x where x.organization_id=o and x.person_id=p.id and x.user_id=u and x.valid_from<=statement_timestamp() and (x.valid_to is null or x.valid_to>statement_timestamp())) then raise exception 'own person only'; end if;
+  if not d ? 'version' or p.version is distinct from (d->>'version')::bigint then raise exception 'version conflict'; end if;
+  id:=gen_random_uuid(); insert into youcon_people.change_requests(id,organization_id,person_id,requester_user_id,requester_was_hr,base_version,state,submitted_at,created_by) values(id,o,p.id,u,youcon_people_private.has_role(o,u,'hr'),p.version,'pending',statement_timestamp(),u);
+  insert into youcon_people.change_request_items(organization_id,request_id,field_code,proposed_value,created_by) values(o,id,d->>'field',d->>'value',u);
+ elsif op='review_request' then
+  select * into strict req from youcon_people.change_requests where organization_id=o and change_requests.id=(d->>'request_id')::uuid for update;
+  if req.requester_user_id=u then raise exception 'no self approval'; end if;
+  if exists(select 1 from youcon_people.person_accounts x where x.organization_id=o and x.person_id=req.person_id and x.user_id=u and x.valid_from<=statement_timestamp() and (x.valid_to is null or x.valid_to>statement_timestamp())) then raise exception 'no self-person approval'; end if;
+  if req.state<>'pending' or nullif(trim(d->>'reason'),'') is null or jsonb_typeof(d->'approve') is distinct from 'boolean' then raise exception 'pending request and reason required'; end if;
+  if not (youcon_people_private.has_role(o,u,'hr') and youcon_people_private.can(o,'people.request.review')) and not (youcon_people_private.has_role(o,u,'director') and youcon_people_private.can(o,'people.request.review_hr') and req.requester_was_hr and youcon_people_private.has_role(o,req.requester_user_id,'hr')) then raise exception 'exceptional review denied' using errcode='42501'; end if;
+  select * into strict p from youcon_people.persons where organization_id=o and persons.id=req.person_id for update;
+  if p.version<>req.base_version then
+   update youcon_people.change_requests set state='conflict' where organization_id=o and change_requests.id=req.id;
+  else
+   if (d->>'approve')::boolean then
+    select field_code,proposed_value into strict field,value from youcon_people.change_request_items where organization_id=o and request_id=req.id;
+    if field='display_name' then
+     if length(value)>160 or length(trim(value))=0 then raise exception 'invalid display name'; end if;
+     update youcon_people.persons set display_name=value,version=version+1 where organization_id=o and persons.id=p.id;
+    else
+     perform youcon_people_private.contact(o,p.id,case field when 'professional_email' then 'email' else 'phone' end,'professional',value);
+     update youcon_people.persons set version=version+1 where organization_id=o and persons.id=p.id;
+    end if;
+   end if;
+   update youcon_people.change_requests set state=case when (d->>'approve')::boolean then 'approved' else 'rejected' end,reviewer_user_id=u,reviewed_at=statement_timestamp(),decision_reason=d->>'reason' where organization_id=o and change_requests.id=req.id;
+  end if;
+  id:=req.id;
+ end if;
+ insert into youcon_people.audit_events(organization_id,actor_user_id,capability,entity_type,entity_id,action,request_id,correlation_id,reason)
+ values(o,u,op,'command',id,op,case when op in ('submit_request','review_request') then id end,k,coalesce(d->>'reason','Transactional command'));
+ result:=jsonb_build_object('id',id,'operation',op);
+ -- Fingerprint only; raw PII is never persisted in receipts.
+ insert into youcon_people.operation_receipts(organization_id,actor_user_id,idempotency_key,command,payload,result) values(o,u,k,op,jsonb_build_object('sha256',encode(sha256(convert_to(d::text,'UTF8')),'hex')),result);
+ return result;
+end $$;
+
+create function youcon_people_private.access_allowed(o uuid) returns boolean language sql stable security definer set search_path='' as $$select youcon_people_private.eligible(o,auth.uid())$$;
+create function youcon_people_private.management_access(o uuid) returns boolean language sql stable security definer set search_path='' as $$select youcon_people_private.can(o,'people.management.view') and (youcon_people_private.has_role(o,auth.uid(),'hr') or youcon_people_private.has_role(o,auth.uid(),'director'))$$;
+create function youcon_people_private.any_access() returns boolean language sql stable security definer set search_path='' as $$select exists(select 1 from youcon_people.memberships m where m.user_id=auth.uid() and youcon_people_private.eligible(m.organization_id,auth.uid()))$$;
+create function youcon_people_private.read_data(op text,o uuid,p uuid,after_id uuid) returns jsonb language plpgsql set search_path='' as $$
+declare result jsonb;
+begin
+ if op='my_requests' then
+  perform youcon_people_private.require_cap(o,'people.request.submit');
+  select coalesce(jsonb_agg(jsonb_build_object('id',id,'state',state,'submitted_at',submitted_at,'reviewed_at',reviewed_at,'decision_reason',decision_reason)),'[]'::jsonb) into result from (select * from youcon_people.change_requests where organization_id=o and requester_user_id=auth.uid() order by submitted_at desc limit 100) q;
+  return result;
+ end if;
+ if not youcon_people_private.management_access(o) then raise exception 'management only' using errcode='42501'; end if;
+ if op='private_contacts' then
+  perform youcon_people_private.require_cap(o,'people.private.view');
+  select coalesce(jsonb_agg(jsonb_build_object('kind',kind,'value',value)),'[]'::jsonb) into result from youcon_people.person_contacts where organization_id=o and person_id=p and scope='private' and is_primary;
+ elsif op='history' then
+  select coalesce(jsonb_agg(jsonb_build_object('id',id,'start',start_date,'end',end_date,'planned_end',planned_end_date,'type',contract_type)),'[]'::jsonb) into result from youcon_people.engagements where organization_id=o and person_id=p;
+  result:=jsonb_build_object('engagements',result,'movements',coalesce((select jsonb_agg(jsonb_build_object('id',a.id,'engagement_id',a.engagement_id,'from',a.valid_from,'to',a.valid_to,'unit_id',a.unit_id,'department_id',a.department_id,'position_id',a.position_id,'leader_id',a.leader_engagement_id,'supersedes_id',a.supersedes_id)) from youcon_people.engagement_assignments a join youcon_people.engagements e on e.organization_id=a.organization_id and e.id=a.engagement_id where a.organization_id=o and e.person_id=p),'[]'::jsonb));
+ elsif op='review_queue' then
+  if not ((youcon_people_private.has_role(o,auth.uid(),'hr') and youcon_people_private.can(o,'people.request.review')) or (youcon_people_private.has_role(o,auth.uid(),'director') and youcon_people_private.can(o,'people.request.review_hr'))) then raise exception 'review denied' using errcode='42501'; end if;
+  select coalesce(jsonb_agg(jsonb_build_object('id',r.id,'person_id',r.person_id,'state',r.state,'base_version',r.base_version,'items',(select jsonb_agg(jsonb_build_object('field',i.field_code,'value',i.proposed_value)) from youcon_people.change_request_items i where i.organization_id=o and i.request_id=r.id))),'[]'::jsonb) into result from (select * from youcon_people.change_requests x where x.organization_id=o and x.state='pending' and x.requester_user_id<>auth.uid() and ((youcon_people_private.has_role(o,auth.uid(),'hr') and youcon_people_private.can(o,'people.request.review')) or (youcon_people_private.has_role(o,auth.uid(),'director') and youcon_people_private.can(o,'people.request.review_hr') and x.requester_was_hr and youcon_people_private.has_role(o,x.requester_user_id,'hr'))) order by submitted_at limit 100) r;
+ elsif op in ('directory','export') then
+  if op='export' then perform youcon_people_private.require_cap(o,'people.export.management'); end if;
+  select coalesce(jsonb_agg(to_jsonb(q)),'[]'::jsonb) into result from (
+   select x.id,x.internal_code,coalesce(x.display_name,x.full_name) as name,e.contract_type,e.start_date,e.end_date,e.planned_end_date,a.position_id,a.department_id,a.unit_id,
+    case when e.start_date>(statement_timestamp() at time zone 'America/Sao_Paulo')::date then 'scheduled' when e.id is null or e.access_closed_at is not null or coalesce(e.end_date,e.planned_end_date)<(statement_timestamp() at time zone 'America/Sao_Paulo')::date then 'ended' else 'current' end as status
+   from youcon_people.persons x left join lateral(select * from youcon_people.engagements v where v.organization_id=o and v.person_id=x.id and v.state='confirmed' order by (v.start_date<=(statement_timestamp() at time zone 'America/Sao_Paulo')::date) desc,v.start_date desc limit 1) e on true
+   left join lateral(select * from youcon_people.engagement_assignments v where v.organization_id=o and v.engagement_id=e.id order by v.valid_from desc limit 1) a on true
+   where x.organization_id=o and (after_id is null or x.id>after_id) order by x.id limit 100
+  ) q;
+  if op='export' then
+   insert into youcon_people.audit_events(organization_id,actor_user_id,capability,entity_type,entity_id,action,correlation_id,reason) values(o,auth.uid(),'people.export.management','organization',o,'EXPORT',gen_random_uuid(),'Bounded management JSON projection; CSV encoding belongs to trusted backend');
+  end if;
+ else raise exception 'unknown projection'; end if;
+ return result;
+end $$;
+create function youcon_people_private.rpc_create_person(o uuid,k uuid,d jsonb) returns jsonb language sql security definer set search_path='' as $$select youcon_people_private.command('create_person',o,k,d)$$;
+create function youcon_people.people_create_person(o uuid,k uuid,d jsonb) returns jsonb language sql security invoker set search_path='' as $$select youcon_people_private.rpc_create_person(o,k,d)$$;
+create function youcon_people_private.rpc_edit_person(o uuid,k uuid,d jsonb) returns jsonb language sql security definer set search_path='' as $$select youcon_people_private.command('edit_person',o,k,d)$$;
+create function youcon_people.people_edit_person(o uuid,k uuid,d jsonb) returns jsonb language sql security invoker set search_path='' as $$select youcon_people_private.rpc_edit_person(o,k,d)$$;
+create function youcon_people_private.rpc_create_engagement(o uuid,k uuid,d jsonb) returns jsonb language sql security definer set search_path='' as $$select youcon_people_private.command('create_engagement',o,k,d)$$;
+create function youcon_people.people_create_engagement(o uuid,k uuid,d jsonb) returns jsonb language sql security invoker set search_path='' as $$select youcon_people_private.rpc_create_engagement(o,k,d)$$;
+create function youcon_people_private.rpc_close_engagement(o uuid,k uuid,d jsonb) returns jsonb language sql security definer set search_path='' as $$select youcon_people_private.command('close_engagement',o,k,d)$$;
+create function youcon_people.people_close_engagement(o uuid,k uuid,d jsonb) returns jsonb language sql security invoker set search_path='' as $$select youcon_people_private.rpc_close_engagement(o,k,d)$$;
+create function youcon_people_private.rpc_move_engagement(o uuid,k uuid,d jsonb) returns jsonb language sql security definer set search_path='' as $$select youcon_people_private.command('move_engagement',o,k,d)$$;
+create function youcon_people.people_move_engagement(o uuid,k uuid,d jsonb) returns jsonb language sql security invoker set search_path='' as $$select youcon_people_private.rpc_move_engagement(o,k,d)$$;
+create function youcon_people_private.rpc_associate_account(o uuid,k uuid,d jsonb) returns jsonb language sql security definer set search_path='' as $$select youcon_people_private.command('associate_account',o,k,d)$$;
+create function youcon_people.people_associate_account(o uuid,k uuid,d jsonb) returns jsonb language sql security invoker set search_path='' as $$select youcon_people_private.rpc_associate_account(o,k,d)$$;
+create function youcon_people_private.rpc_submit_request(o uuid,k uuid,d jsonb) returns jsonb language sql security definer set search_path='' as $$select youcon_people_private.command('submit_request',o,k,d)$$;
+create function youcon_people.people_submit_request(o uuid,k uuid,d jsonb) returns jsonb language sql security invoker set search_path='' as $$select youcon_people_private.rpc_submit_request(o,k,d)$$;
+create function youcon_people_private.rpc_review_request(o uuid,k uuid,d jsonb) returns jsonb language sql security definer set search_path='' as $$select youcon_people_private.command('review_request',o,k,d)$$;
+create function youcon_people.people_review_request(o uuid,k uuid,d jsonb) returns jsonb language sql security invoker set search_path='' as $$select youcon_people_private.rpc_review_request(o,k,d)$$;
+create function youcon_people_private.rpc_access_exception(o uuid,k uuid,d jsonb) returns jsonb language sql security definer set search_path='' as $$select youcon_people_private.command('access_exception',o,k,d)$$;
+create function youcon_people.people_access_exception(o uuid,k uuid,d jsonb) returns jsonb language sql security invoker set search_path='' as $$select youcon_people_private.rpc_access_exception(o,k,d)$$;
+create function youcon_people_private.rpc_directory(o uuid,p uuid default null,after_id uuid default null) returns jsonb language sql security definer set search_path='' as $$select youcon_people_private.read_data('directory',o,p,after_id)$$;
+create function youcon_people.people_directory(o uuid,p uuid default null,after_id uuid default null) returns jsonb language sql security invoker set search_path='' as $$select youcon_people_private.rpc_directory(o,p,after_id)$$;
+create function youcon_people_private.rpc_export(o uuid,p uuid default null,after_id uuid default null) returns jsonb language sql security definer set search_path='' as $$select youcon_people_private.read_data('export',o,p,after_id)$$;
+create function youcon_people.people_export(o uuid,p uuid default null,after_id uuid default null) returns jsonb language sql security invoker set search_path='' as $$select youcon_people_private.rpc_export(o,p,after_id)$$;
+create function youcon_people_private.rpc_private_contacts(o uuid,p uuid default null,after_id uuid default null) returns jsonb language sql security definer set search_path='' as $$select youcon_people_private.read_data('private_contacts',o,p,after_id)$$;
+create function youcon_people.people_private_contacts(o uuid,p uuid default null,after_id uuid default null) returns jsonb language sql security invoker set search_path='' as $$select youcon_people_private.rpc_private_contacts(o,p,after_id)$$;
+create function youcon_people_private.rpc_history(o uuid,p uuid default null,after_id uuid default null) returns jsonb language sql security definer set search_path='' as $$select youcon_people_private.read_data('history',o,p,after_id)$$;
+create function youcon_people.people_history(o uuid,p uuid default null,after_id uuid default null) returns jsonb language sql security invoker set search_path='' as $$select youcon_people_private.rpc_history(o,p,after_id)$$;
+create function youcon_people_private.rpc_my_requests(o uuid,p uuid default null,after_id uuid default null) returns jsonb language sql security definer set search_path='' as $$select youcon_people_private.read_data('my_requests',o,p,after_id)$$;
+create function youcon_people.people_my_requests(o uuid,p uuid default null,after_id uuid default null) returns jsonb language sql security invoker set search_path='' as $$select youcon_people_private.rpc_my_requests(o,p,after_id)$$;
+create function youcon_people_private.rpc_review_queue(o uuid,p uuid default null,after_id uuid default null) returns jsonb language sql security definer set search_path='' as $$select youcon_people_private.read_data('review_queue',o,p,after_id)$$;
+create function youcon_people.people_review_queue(o uuid,p uuid default null,after_id uuid default null) returns jsonb language sql security invoker set search_path='' as $$select youcon_people_private.rpc_review_queue(o,p,after_id)$$;
+grant create on schema youcon_people_private to youcon_people_executor;
+revoke all on function youcon_people_private.has_role(uuid,uuid,text) from public,anon,authenticated,service_role;
+grant execute on function youcon_people_private.has_role(uuid,uuid,text) to youcon_people_executor;
+revoke all on function youcon_people_private.eligible(uuid,uuid) from public,anon,authenticated,service_role;
+grant execute on function youcon_people_private.eligible(uuid,uuid) to youcon_people_executor;
+revoke all on function youcon_people_private.can(uuid,text) from public,anon,authenticated,service_role;
+grant execute on function youcon_people_private.can(uuid,text) to youcon_people_executor;
+revoke all on function youcon_people_private.require_cap(uuid,text) from public,anon,authenticated,service_role;
+grant execute on function youcon_people_private.require_cap(uuid,text) to youcon_people_executor;
+revoke all on function youcon_people_private.contact(uuid,uuid,text,text,text) from public,anon,authenticated,service_role;
+grant execute on function youcon_people_private.contact(uuid,uuid,text,text,text) to youcon_people_executor;
+revoke all on function youcon_people_private.command(text,uuid,uuid,jsonb) from public,anon,authenticated,service_role;
+grant execute on function youcon_people_private.command(text,uuid,uuid,jsonb) to youcon_people_executor;
+revoke all on function youcon_people_private.read_data(text,uuid,uuid,uuid) from public,anon,authenticated,service_role;
+grant execute on function youcon_people_private.read_data(text,uuid,uuid,uuid) to youcon_people_executor;
+revoke all on function youcon_people_private.access_allowed(uuid) from public,anon,authenticated,service_role;
+alter function youcon_people_private.access_allowed(uuid) owner to youcon_people_executor;
+grant execute on function youcon_people_private.access_allowed(uuid) to authenticated;
+revoke all on function youcon_people_private.management_access(uuid) from public,anon,authenticated,service_role;
+alter function youcon_people_private.management_access(uuid) owner to youcon_people_executor;
+grant execute on function youcon_people_private.management_access(uuid) to authenticated;
+revoke all on function youcon_people_private.any_access() from public,anon,authenticated,service_role;
+alter function youcon_people_private.any_access() owner to youcon_people_executor;
+grant execute on function youcon_people_private.any_access() to authenticated;
+revoke all on function youcon_people_private.rpc_create_person(uuid,uuid,jsonb) from public,anon,authenticated,service_role;
+alter function youcon_people_private.rpc_create_person(uuid,uuid,jsonb) owner to youcon_people_executor;
+grant execute on function youcon_people_private.rpc_create_person(uuid,uuid,jsonb) to authenticated;
+revoke all on function youcon_people_private.rpc_edit_person(uuid,uuid,jsonb) from public,anon,authenticated,service_role;
+alter function youcon_people_private.rpc_edit_person(uuid,uuid,jsonb) owner to youcon_people_executor;
+grant execute on function youcon_people_private.rpc_edit_person(uuid,uuid,jsonb) to authenticated;
+revoke all on function youcon_people_private.rpc_create_engagement(uuid,uuid,jsonb) from public,anon,authenticated,service_role;
+alter function youcon_people_private.rpc_create_engagement(uuid,uuid,jsonb) owner to youcon_people_executor;
+grant execute on function youcon_people_private.rpc_create_engagement(uuid,uuid,jsonb) to authenticated;
+revoke all on function youcon_people_private.rpc_close_engagement(uuid,uuid,jsonb) from public,anon,authenticated,service_role;
+alter function youcon_people_private.rpc_close_engagement(uuid,uuid,jsonb) owner to youcon_people_executor;
+grant execute on function youcon_people_private.rpc_close_engagement(uuid,uuid,jsonb) to authenticated;
+revoke all on function youcon_people_private.rpc_move_engagement(uuid,uuid,jsonb) from public,anon,authenticated,service_role;
+alter function youcon_people_private.rpc_move_engagement(uuid,uuid,jsonb) owner to youcon_people_executor;
+grant execute on function youcon_people_private.rpc_move_engagement(uuid,uuid,jsonb) to authenticated;
+revoke all on function youcon_people_private.rpc_associate_account(uuid,uuid,jsonb) from public,anon,authenticated,service_role;
+alter function youcon_people_private.rpc_associate_account(uuid,uuid,jsonb) owner to youcon_people_executor;
+grant execute on function youcon_people_private.rpc_associate_account(uuid,uuid,jsonb) to authenticated;
+revoke all on function youcon_people_private.rpc_submit_request(uuid,uuid,jsonb) from public,anon,authenticated,service_role;
+alter function youcon_people_private.rpc_submit_request(uuid,uuid,jsonb) owner to youcon_people_executor;
+grant execute on function youcon_people_private.rpc_submit_request(uuid,uuid,jsonb) to authenticated;
+revoke all on function youcon_people_private.rpc_review_request(uuid,uuid,jsonb) from public,anon,authenticated,service_role;
+alter function youcon_people_private.rpc_review_request(uuid,uuid,jsonb) owner to youcon_people_executor;
+grant execute on function youcon_people_private.rpc_review_request(uuid,uuid,jsonb) to authenticated;
+revoke all on function youcon_people_private.rpc_access_exception(uuid,uuid,jsonb) from public,anon,authenticated,service_role;
+alter function youcon_people_private.rpc_access_exception(uuid,uuid,jsonb) owner to youcon_people_executor;
+grant execute on function youcon_people_private.rpc_access_exception(uuid,uuid,jsonb) to authenticated;
+revoke all on function youcon_people_private.rpc_directory(uuid,uuid,uuid) from public,anon,authenticated,service_role;
+alter function youcon_people_private.rpc_directory(uuid,uuid,uuid) owner to youcon_people_executor;
+grant execute on function youcon_people_private.rpc_directory(uuid,uuid,uuid) to authenticated;
+revoke all on function youcon_people_private.rpc_export(uuid,uuid,uuid) from public,anon,authenticated,service_role;
+alter function youcon_people_private.rpc_export(uuid,uuid,uuid) owner to youcon_people_executor;
+grant execute on function youcon_people_private.rpc_export(uuid,uuid,uuid) to authenticated;
+revoke all on function youcon_people_private.rpc_private_contacts(uuid,uuid,uuid) from public,anon,authenticated,service_role;
+alter function youcon_people_private.rpc_private_contacts(uuid,uuid,uuid) owner to youcon_people_executor;
+grant execute on function youcon_people_private.rpc_private_contacts(uuid,uuid,uuid) to authenticated;
+revoke all on function youcon_people_private.rpc_history(uuid,uuid,uuid) from public,anon,authenticated,service_role;
+alter function youcon_people_private.rpc_history(uuid,uuid,uuid) owner to youcon_people_executor;
+grant execute on function youcon_people_private.rpc_history(uuid,uuid,uuid) to authenticated;
+revoke all on function youcon_people_private.rpc_my_requests(uuid,uuid,uuid) from public,anon,authenticated,service_role;
+alter function youcon_people_private.rpc_my_requests(uuid,uuid,uuid) owner to youcon_people_executor;
+grant execute on function youcon_people_private.rpc_my_requests(uuid,uuid,uuid) to authenticated;
+revoke all on function youcon_people_private.rpc_review_queue(uuid,uuid,uuid) from public,anon,authenticated,service_role;
+alter function youcon_people_private.rpc_review_queue(uuid,uuid,uuid) owner to youcon_people_executor;
+grant execute on function youcon_people_private.rpc_review_queue(uuid,uuid,uuid) to authenticated;
+revoke all on function youcon_people.people_create_person(uuid,uuid,jsonb) from public,anon,authenticated,service_role;
+revoke all on function youcon_people.people_edit_person(uuid,uuid,jsonb) from public,anon,authenticated,service_role;
+revoke all on function youcon_people.people_create_engagement(uuid,uuid,jsonb) from public,anon,authenticated,service_role;
+revoke all on function youcon_people.people_close_engagement(uuid,uuid,jsonb) from public,anon,authenticated,service_role;
+revoke all on function youcon_people.people_move_engagement(uuid,uuid,jsonb) from public,anon,authenticated,service_role;
+revoke all on function youcon_people.people_associate_account(uuid,uuid,jsonb) from public,anon,authenticated,service_role;
+revoke all on function youcon_people.people_submit_request(uuid,uuid,jsonb) from public,anon,authenticated,service_role;
+revoke all on function youcon_people.people_review_request(uuid,uuid,jsonb) from public,anon,authenticated,service_role;
+revoke all on function youcon_people.people_access_exception(uuid,uuid,jsonb) from public,anon,authenticated,service_role;
+revoke all on function youcon_people.people_directory(uuid,uuid,uuid) from public,anon,authenticated,service_role;
+revoke all on function youcon_people.people_export(uuid,uuid,uuid) from public,anon,authenticated,service_role;
+revoke all on function youcon_people.people_private_contacts(uuid,uuid,uuid) from public,anon,authenticated,service_role;
+revoke all on function youcon_people.people_history(uuid,uuid,uuid) from public,anon,authenticated,service_role;
+revoke all on function youcon_people.people_my_requests(uuid,uuid,uuid) from public,anon,authenticated,service_role;
+revoke all on function youcon_people.people_review_queue(uuid,uuid,uuid) from public,anon,authenticated,service_role;
+revoke create on schema youcon_people_private from youcon_people_executor;
+insert into youcon_people.permissions(code,description) values('people.person.write','03C capability: people.person.write');
+insert into youcon_people.role_permissions(role_code,permission_code) values('hr','people.person.write');
+insert into youcon_people.role_permissions(role_code,permission_code) values('director','people.person.write');
+insert into youcon_people.permissions(code,description) values('people.engagement.write','03C capability: people.engagement.write');
+insert into youcon_people.role_permissions(role_code,permission_code) values('hr','people.engagement.write');
+insert into youcon_people.role_permissions(role_code,permission_code) values('director','people.engagement.write');
+insert into youcon_people.permissions(code,description) values('people.request.submit','03C capability: people.request.submit');
+insert into youcon_people.role_permissions(role_code,permission_code) values('professional','people.request.submit');
+insert into youcon_people.role_permissions(role_code,permission_code) values('leadership','people.request.submit');
+insert into youcon_people.role_permissions(role_code,permission_code) values('hr','people.request.submit');
+insert into youcon_people.role_permissions(role_code,permission_code) values('director','people.request.submit');
+insert into youcon_people.permissions(code,description) values('people.request.review','03C capability: people.request.review');
+insert into youcon_people.role_permissions(role_code,permission_code) values('hr','people.request.review');
+insert into youcon_people.permissions(code,description) values('people.request.review_hr','03C capability: people.request.review_hr');
+insert into youcon_people.role_permissions(role_code,permission_code) values('director','people.request.review_hr');
+-- Inspect only the functions introduced in this lot. Never revoke other apps' defaults.
+do $$begin
+ if exists(select 1 from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid=p.pronamespace cross join lateral pg_catalog.aclexplode(p.proacl) a
+ where ((n.nspname='youcon_people_private' and p.proname='has_role') or (n.nspname='youcon_people_private' and p.proname='eligible') or (n.nspname='youcon_people_private' and p.proname='can') or (n.nspname='youcon_people_private' and p.proname='require_cap') or (n.nspname='youcon_people_private' and p.proname='contact') or (n.nspname='youcon_people_private' and p.proname='command') or (n.nspname='youcon_people_private' and p.proname='access_allowed') or (n.nspname='youcon_people_private' and p.proname='management_access') or (n.nspname='youcon_people_private' and p.proname='any_access') or (n.nspname='youcon_people_private' and p.proname='read_data') or (n.nspname='youcon_people_private' and p.proname='rpc_create_person') or (n.nspname='youcon_people' and p.proname='people_create_person') or (n.nspname='youcon_people_private' and p.proname='rpc_edit_person') or (n.nspname='youcon_people' and p.proname='people_edit_person') or (n.nspname='youcon_people_private' and p.proname='rpc_create_engagement') or (n.nspname='youcon_people' and p.proname='people_create_engagement') or (n.nspname='youcon_people_private' and p.proname='rpc_close_engagement') or (n.nspname='youcon_people' and p.proname='people_close_engagement') or (n.nspname='youcon_people_private' and p.proname='rpc_move_engagement') or (n.nspname='youcon_people' and p.proname='people_move_engagement') or (n.nspname='youcon_people_private' and p.proname='rpc_associate_account') or (n.nspname='youcon_people' and p.proname='people_associate_account') or (n.nspname='youcon_people_private' and p.proname='rpc_submit_request') or (n.nspname='youcon_people' and p.proname='people_submit_request') or (n.nspname='youcon_people_private' and p.proname='rpc_review_request') or (n.nspname='youcon_people' and p.proname='people_review_request') or (n.nspname='youcon_people_private' and p.proname='rpc_access_exception') or (n.nspname='youcon_people' and p.proname='people_access_exception') or (n.nspname='youcon_people_private' and p.proname='rpc_directory') or (n.nspname='youcon_people' and p.proname='people_directory') or (n.nspname='youcon_people_private' and p.proname='rpc_export') or (n.nspname='youcon_people' and p.proname='people_export') or (n.nspname='youcon_people_private' and p.proname='rpc_private_contacts') or (n.nspname='youcon_people' and p.proname='people_private_contacts') or (n.nspname='youcon_people_private' and p.proname='rpc_history') or (n.nspname='youcon_people' and p.proname='people_history') or (n.nspname='youcon_people_private' and p.proname='rpc_my_requests') or (n.nspname='youcon_people' and p.proname='people_my_requests') or (n.nspname='youcon_people_private' and p.proname='rpc_review_queue') or (n.nspname='youcon_people' and p.proname='people_review_queue')) and a.grantee<>p.proowner and a.grantee not in ('authenticated'::regrole::oid,'youcon_people_executor'::regrole::oid)) then raise exception 'unexpected inherited function grant'; end if;
+end $$;
+
+commit;

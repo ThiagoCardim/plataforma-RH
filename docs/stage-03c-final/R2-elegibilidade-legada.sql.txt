@@ -1,0 +1,10 @@
+-- BACKOUT separado, autorização explícita: restaura a elegibilidade legada, pode readmitir vínculos encerrados.
+begin;
+drop policy people_eligibility on youcon_people.organizations;
+drop policy people_eligibility on youcon_people.memberships;
+drop policy people_eligibility on youcon_people.profiles;
+drop policy people_eligibility on youcon_people.membership_roles;
+drop policy people_eligibility on youcon_people.roles;
+drop policy people_eligibility on youcon_people.permissions;
+drop policy people_eligibility on youcon_people.role_permissions;
+commit;

@@ -1,0 +1,224 @@
+-- PROPOSTA; somente teste PostgreSQL local. Requer autorização própria para remoto.
+begin;
+set local lock_timeout='3s';
+set local statement_timeout='30s';
+create table youcon_people.units (
+ id uuid primary key default gen_random_uuid(),
+ organization_id uuid not null references youcon_people.organizations(id) on delete restrict,
+ created_at timestamptz not null default now(),
+ created_by uuid,
+ code text not null, name text not null, active boolean not null default true, unique(organization_id,code),
+ unique(organization_id,id)
+);
+alter table youcon_people.units enable row level security;
+revoke all on youcon_people.units from public, anon, authenticated, service_role;
+create index units_org_idx on youcon_people.units(organization_id);
+create table youcon_people.departments (
+ id uuid primary key default gen_random_uuid(),
+ organization_id uuid not null references youcon_people.organizations(id) on delete restrict,
+ created_at timestamptz not null default now(),
+ created_by uuid,
+ code text not null, name text not null, active boolean not null default true, unique(organization_id,code),
+ unique(organization_id,id)
+);
+alter table youcon_people.departments enable row level security;
+revoke all on youcon_people.departments from public, anon, authenticated, service_role;
+create index departments_org_idx on youcon_people.departments(organization_id);
+create table youcon_people.positions (
+ id uuid primary key default gen_random_uuid(),
+ organization_id uuid not null references youcon_people.organizations(id) on delete restrict,
+ created_at timestamptz not null default now(),
+ created_by uuid,
+ code text not null, name text not null, active boolean not null default true, unique(organization_id,code),
+ unique(organization_id,id)
+);
+alter table youcon_people.positions enable row level security;
+revoke all on youcon_people.positions from public, anon, authenticated, service_role;
+create index positions_org_idx on youcon_people.positions(organization_id);
+create table youcon_people.persons (
+ id uuid primary key default gen_random_uuid(),
+ organization_id uuid not null references youcon_people.organizations(id) on delete restrict,
+ created_at timestamptz not null default now(),
+ created_by uuid,
+ internal_code text not null, full_name text not null check(length(trim(full_name)) between 3 and 160), display_name text, version bigint not null default 1, unique(organization_id,internal_code),
+ unique(organization_id,id)
+);
+alter table youcon_people.persons enable row level security;
+revoke all on youcon_people.persons from public, anon, authenticated, service_role;
+create index persons_org_idx on youcon_people.persons(organization_id);
+create table youcon_people.person_contacts (
+ id uuid primary key default gen_random_uuid(),
+ organization_id uuid not null references youcon_people.organizations(id) on delete restrict,
+ created_at timestamptz not null default now(),
+ created_by uuid,
+ person_id uuid not null, kind text not null check(kind in ('email','phone')), scope text not null check(scope in ('professional','private')), value text not null, is_primary boolean not null default false, foreign key(organization_id,person_id) references youcon_people.persons(organization_id,id),
+ unique(organization_id,id)
+);
+alter table youcon_people.person_contacts enable row level security;
+revoke all on youcon_people.person_contacts from public, anon, authenticated, service_role;
+create index person_contacts_org_idx on youcon_people.person_contacts(organization_id);
+create table youcon_people.engagements (
+ id uuid primary key default gen_random_uuid(),
+ organization_id uuid not null references youcon_people.organizations(id) on delete restrict,
+ created_at timestamptz not null default now(),
+ created_by uuid,
+ person_id uuid not null, contract_type text not null check(contract_type in ('clt','intern','pj')), start_date date not null, end_date date, planned_end_date date, access_closed_at timestamptz, state text not null check(state = 'confirmed'), version bigint not null default 1, check(end_date is null or end_date>=start_date), check(planned_end_date is null or planned_end_date>=start_date), check(end_date is null or planned_end_date is null or end_date<=planned_end_date), foreign key(organization_id,person_id) references youcon_people.persons(organization_id,id),
+ unique(organization_id,id)
+);
+alter table youcon_people.engagements enable row level security;
+revoke all on youcon_people.engagements from public, anon, authenticated, service_role;
+create index engagements_org_idx on youcon_people.engagements(organization_id);
+create table youcon_people.engagement_assignments (
+ id uuid primary key default gen_random_uuid(),
+ organization_id uuid not null references youcon_people.organizations(id) on delete restrict,
+ created_at timestamptz not null default now(),
+ created_by uuid,
+ engagement_id uuid not null, unit_id uuid not null, department_id uuid not null, position_id uuid not null, leader_engagement_id uuid, valid_from date not null, valid_to date, reason text not null, supersedes_id uuid, check(valid_to is null or valid_to>valid_from), foreign key(organization_id,engagement_id) references youcon_people.engagements(organization_id,id), foreign key(organization_id,leader_engagement_id) references youcon_people.engagements(organization_id,id), foreign key(organization_id,unit_id) references youcon_people.units(organization_id,id), foreign key(organization_id,department_id) references youcon_people.departments(organization_id,id), foreign key(organization_id,position_id) references youcon_people.positions(organization_id,id),
+ unique(organization_id,id)
+);
+alter table youcon_people.engagement_assignments enable row level security;
+revoke all on youcon_people.engagement_assignments from public, anon, authenticated, service_role;
+create index engagement_assignments_org_idx on youcon_people.engagement_assignments(organization_id);
+create table youcon_people.engagement_clt (
+ id uuid primary key default gen_random_uuid(),
+ organization_id uuid not null references youcon_people.organizations(id) on delete restrict,
+ created_at timestamptz not null default now(),
+ created_by uuid,
+ engagement_id uuid not null, term_type text check(term_type in ('fixed','indefinite')), registration_code text, unique(organization_id,engagement_id), foreign key(organization_id,engagement_id) references youcon_people.engagements(organization_id,id),
+ unique(organization_id,id)
+);
+alter table youcon_people.engagement_clt enable row level security;
+revoke all on youcon_people.engagement_clt from public, anon, authenticated, service_role;
+create index engagement_clt_org_idx on youcon_people.engagement_clt(organization_id);
+create table youcon_people.engagement_intern (
+ id uuid primary key default gen_random_uuid(),
+ organization_id uuid not null references youcon_people.organizations(id) on delete restrict,
+ created_at timestamptz not null default now(),
+ created_by uuid,
+ engagement_id uuid not null, institution text, course text, agreement_reference text, supervisor_engagement_id uuid, unique(organization_id,engagement_id), foreign key(organization_id,engagement_id) references youcon_people.engagements(organization_id,id), foreign key(organization_id,supervisor_engagement_id) references youcon_people.engagements(organization_id,id),
+ unique(organization_id,id)
+);
+alter table youcon_people.engagement_intern enable row level security;
+revoke all on youcon_people.engagement_intern from public, anon, authenticated, service_role;
+create index engagement_intern_org_idx on youcon_people.engagement_intern(organization_id);
+create table youcon_people.service_providers (
+ id uuid primary key default gen_random_uuid(),
+ organization_id uuid not null references youcon_people.organizations(id) on delete restrict,
+ created_at timestamptz not null default now(),
+ created_by uuid,
+ legal_name text not null, tax_identifier text, unique(organization_id,tax_identifier),
+ unique(organization_id,id)
+);
+alter table youcon_people.service_providers enable row level security;
+revoke all on youcon_people.service_providers from public, anon, authenticated, service_role;
+create index service_providers_org_idx on youcon_people.service_providers(organization_id);
+create table youcon_people.engagement_pj (
+ id uuid primary key default gen_random_uuid(),
+ organization_id uuid not null references youcon_people.organizations(id) on delete restrict,
+ created_at timestamptz not null default now(),
+ created_by uuid,
+ engagement_id uuid not null, service_provider_id uuid, contract_reference text, service_scope text, unique(organization_id,engagement_id), foreign key(organization_id,engagement_id) references youcon_people.engagements(organization_id,id), foreign key(organization_id,service_provider_id) references youcon_people.service_providers(organization_id,id),
+ unique(organization_id,id)
+);
+alter table youcon_people.engagement_pj enable row level security;
+revoke all on youcon_people.engagement_pj from public, anon, authenticated, service_role;
+create index engagement_pj_org_idx on youcon_people.engagement_pj(organization_id);
+create table youcon_people.person_accounts (
+ id uuid primary key default gen_random_uuid(),
+ organization_id uuid not null references youcon_people.organizations(id) on delete restrict,
+ created_at timestamptz not null default now(),
+ created_by uuid,
+ person_id uuid not null, user_id uuid not null references youcon_people.profiles(user_id), valid_from timestamptz not null, valid_to timestamptz, check(valid_to is null or valid_to>valid_from), foreign key(organization_id,person_id) references youcon_people.persons(organization_id,id),
+ unique(organization_id,id)
+);
+alter table youcon_people.person_accounts enable row level security;
+revoke all on youcon_people.person_accounts from public, anon, authenticated, service_role;
+create index person_accounts_org_idx on youcon_people.person_accounts(organization_id);
+create table youcon_people.change_requests (
+ id uuid primary key default gen_random_uuid(),
+ organization_id uuid not null references youcon_people.organizations(id) on delete restrict,
+ created_at timestamptz not null default now(),
+ created_by uuid,
+ person_id uuid not null, requester_user_id uuid not null, requester_was_hr boolean not null, base_version bigint not null, access_closed_at timestamptz, state text not null check(state in ('pending','approved','rejected','cancelled','conflict')), submitted_at timestamptz not null, reviewer_user_id uuid, reviewed_at timestamptz, decision_reason text, check(reviewer_user_id is null or reviewer_user_id<>requester_user_id), check(state not in ('approved','rejected') or (reviewer_user_id is not null and reviewed_at is not null and length(trim(decision_reason))>0)), foreign key(organization_id,person_id) references youcon_people.persons(organization_id,id),
+ unique(organization_id,id)
+);
+alter table youcon_people.change_requests enable row level security;
+revoke all on youcon_people.change_requests from public, anon, authenticated, service_role;
+create index change_requests_org_idx on youcon_people.change_requests(organization_id);
+create table youcon_people.change_request_items (
+ id uuid primary key default gen_random_uuid(),
+ organization_id uuid not null references youcon_people.organizations(id) on delete restrict,
+ created_at timestamptz not null default now(),
+ created_by uuid,
+ request_id uuid not null, field_code text not null check(field_code in ('display_name','professional_email','professional_phone')), proposed_value text not null, unique(organization_id,request_id,field_code), foreign key(organization_id,request_id) references youcon_people.change_requests(organization_id,id),
+ unique(organization_id,id)
+);
+alter table youcon_people.change_request_items enable row level security;
+revoke all on youcon_people.change_request_items from public, anon, authenticated, service_role;
+create index change_request_items_org_idx on youcon_people.change_request_items(organization_id);
+create table youcon_people.access_exceptions (
+ id uuid primary key default gen_random_uuid(),
+ organization_id uuid not null references youcon_people.organizations(id) on delete restrict,
+ created_at timestamptz not null default now(),
+ created_by uuid,
+ person_id uuid not null, user_id uuid not null references youcon_people.profiles(user_id), valid_from timestamptz not null, valid_to timestamptz not null, reason text not null check(length(trim(reason))>0), approved_by uuid not null, revoked_at timestamptz, check(valid_to>valid_from), check(approved_by<>user_id), foreign key(organization_id,person_id) references youcon_people.persons(organization_id,id),
+ unique(organization_id,id)
+);
+alter table youcon_people.access_exceptions enable row level security;
+revoke all on youcon_people.access_exceptions from public, anon, authenticated, service_role;
+create index access_exceptions_org_idx on youcon_people.access_exceptions(organization_id);
+create table youcon_people.audit_events (
+ id uuid primary key default gen_random_uuid(),
+ organization_id uuid not null references youcon_people.organizations(id) on delete restrict,
+ created_at timestamptz not null default now(),
+ created_by uuid,
+ actor_user_id uuid, capability text not null, entity_type text not null, entity_id uuid not null, action text not null, effective_date date, recorded_at timestamptz not null default now(), request_id uuid, correlation_id uuid not null, protected_diff jsonb not null default '{}'::jsonb, reason text, foreign key(organization_id,request_id) references youcon_people.change_requests(organization_id,id),
+ unique(organization_id,id)
+);
+alter table youcon_people.audit_events enable row level security;
+revoke all on youcon_people.audit_events from public, anon, authenticated, service_role;
+create index audit_events_org_idx on youcon_people.audit_events(organization_id);
+create unique index account_person_current on youcon_people.person_accounts(organization_id,person_id) where valid_to is null;
+create unique index account_user_current on youcon_people.person_accounts(organization_id,user_id) where valid_to is null;
+create unique index assignment_open on youcon_people.engagement_assignments(organization_id,engagement_id) where valid_to is null;
+create unique index contact_primary on youcon_people.person_contacts(organization_id,person_id,kind,scope) where is_primary;
+create index engagement_person_period on youcon_people.engagements(organization_id,person_id,start_date,end_date) where state='confirmed';
+create index assignment_period on youcon_people.engagement_assignments(organization_id,engagement_id,valid_from,valid_to);
+create index requests_queue on youcon_people.change_requests(organization_id,state,submitted_at);
+create index audit_entity on youcon_people.audit_events(organization_id,entity_type,entity_id,recorded_at);
+
+alter table youcon_people.engagement_assignments add unique(organization_id,engagement_id,id);
+alter table youcon_people.engagement_assignments add foreign key(organization_id,engagement_id,supersedes_id) references youcon_people.engagement_assignments(organization_id,engagement_id,id);
+create unique index assignment_successor on youcon_people.engagement_assignments(organization_id,supersedes_id) where supersedes_id is not null;
+alter table youcon_people.engagement_assignments add check(length(trim(reason))>0);
+alter table youcon_people.persons add check(version>0);
+alter table youcon_people.engagements add check(version>0);
+alter table youcon_people.change_requests add check(state not in ('approved','rejected') or decision_reason is not null);
+create table youcon_people.operation_receipts (
+ organization_id uuid not null references youcon_people.organizations(id), actor_user_id uuid not null,
+ idempotency_key uuid not null, command text not null, payload jsonb not null, result jsonb not null,
+ created_at timestamptz not null default now(), primary key(organization_id,actor_user_id,idempotency_key));
+alter table youcon_people.operation_receipts enable row level security;
+revoke all on youcon_people.operation_receipts from public,anon,authenticated,service_role;
+
+create table youcon_people.special_grants (
+ organization_id uuid not null, user_id uuid not null, capability text not null check(capability in ('people.private.view','people.private.write','people.export.management','people.accounts.link','people.exception.manage')),
+ valid_until timestamptz not null, approved_by uuid not null, reason text not null check(length(trim(reason))>0),
+ primary key(organization_id,user_id,capability), foreign key(organization_id,user_id) references youcon_people.memberships(organization_id,user_id));
+alter table youcon_people.special_grants enable row level security;
+revoke all on youcon_people.special_grants from public,anon,authenticated,service_role;
+alter table youcon_people.persons add check(display_name is null or length(display_name) between 1 and 160);
+alter table youcon_people.person_contacts add check(length(value) between 1 and 160);
+alter table youcon_people.change_request_items add check(length(proposed_value) between 1 and 160);
+-- Fail closed if another application's global defaults granted our new tables.
+do $$begin
+ if exists(select 1 from pg_catalog.pg_class c join pg_catalog.pg_namespace n on n.oid=c.relnamespace cross join lateral pg_catalog.aclexplode(c.relacl) a
+ where n.nspname='youcon_people' and c.relname in ('units','departments','positions','persons','person_contacts','engagements','engagement_assignments','engagement_clt','engagement_intern','service_providers','engagement_pj','person_accounts','change_requests','change_request_items','access_exceptions','audit_events','operation_receipts','special_grants') and a.grantee<>c.relowner) then raise exception 'unexpected inherited table grant'; end if;
+end $$;
+
+alter table youcon_people.engagements add check(isfinite(start_date) and (end_date is null or isfinite(end_date)) and (planned_end_date is null or isfinite(planned_end_date)));
+alter table youcon_people.engagement_assignments add check(isfinite(valid_from) and (valid_to is null or isfinite(valid_to)));
+alter table youcon_people.person_accounts add check(isfinite(valid_from) and (valid_to is null or isfinite(valid_to)));
+alter table youcon_people.access_exceptions add check(isfinite(valid_from) and isfinite(valid_to));
+alter table youcon_people.special_grants add check(isfinite(valid_until));
+commit;

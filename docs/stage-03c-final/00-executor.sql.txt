@@ -1,0 +1,8 @@
+-- Role nova: autorização específica necessária, sem associação a usuários.
+begin;
+set local lock_timeout='3s';
+set local statement_timeout='30s';
+create role youcon_people_executor nologin nosuperuser nocreatedb nocreaterole noinherit nobypassrls;
+grant usage on schema youcon_people,youcon_people_private,auth to youcon_people_executor;
+grant execute on function auth.uid() to youcon_people_executor;
+commit;

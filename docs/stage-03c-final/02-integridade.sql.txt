@@ -1,0 +1,212 @@
+-- PROPOSTA. Sem extensões. Todas as alterações pertencem a People.
+begin;
+set local lock_timeout='3s';
+set local statement_timeout='30s';
+create function youcon_people_private.lock_org(o uuid) returns void language plpgsql set search_path='' as $$
+begin
+ if o is null then raise exception 'organization required'; end if;
+ if current_setting('transaction_isolation') <> 'read committed' then raise exception 'read committed required'; end if;
+ perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('youcon_people:'||o::text,0));
+end $$;
+create function youcon_people_private.guard_integrity() returns trigger language plpgsql set search_path='' as $$
+declare o uuid; e youcon_people.engagements; prev youcon_people.engagement_assignments;
+begin
+ o:=new.organization_id; perform youcon_people_private.lock_org(o);
+ if tg_op='UPDATE' and (new.organization_id<>old.organization_id or new.id<>old.id) then raise exception 'identity immutable'; end if;
+ if tg_table_name='engagements' then
+  if tg_op='UPDATE' and (new.person_id<>old.person_id or new.contract_type<>old.contract_type or new.start_date<>old.start_date or new.planned_end_date is distinct from old.planned_end_date or old.end_date is not null or new.state<>old.state) then raise exception 'contract identity/history immutable'; end if;
+  if new.state='confirmed' and exists(select 1 from youcon_people.engagements x where x.organization_id=o and x.person_id=new.person_id and x.id<>new.id and x.state='confirmed' and daterange(x.start_date,coalesce(x.end_date,x.planned_end_date),'[]') && daterange(new.start_date,coalesce(new.end_date,new.planned_end_date),'[]')) then raise exception 'contract overlap'; end if;
+  if tg_op='UPDATE' and new.end_date is not null and exists(select 1 from youcon_people.engagement_assignments a where a.organization_id=o and a.leader_engagement_id=new.id and (a.valid_to is null or a.valid_to>new.end_date+1)) then raise exception 'leader still referenced after end'; end if;
+  if tg_op='UPDATE' and new.end_date is not null and exists(select 1 from youcon_people.engagement_intern i join youcon_people.engagements child on child.organization_id=i.organization_id and child.id=i.engagement_id where i.organization_id=o and i.supervisor_engagement_id=new.id and child.state='confirmed' and (coalesce(child.end_date,child.planned_end_date) is null or coalesce(child.end_date,child.planned_end_date)>new.end_date)) then raise exception 'supervisor still referenced after end'; end if;
+ elsif tg_table_name='engagement_assignments' then
+  select * into strict e from youcon_people.engagements where organization_id=o and id=new.engagement_id;
+  if e.state<>'confirmed' or new.valid_from<e.start_date or (coalesce(e.end_date,e.planned_end_date) is not null and (new.valid_to is null or new.valid_to>coalesce(e.end_date,e.planned_end_date)+1)) then raise exception 'assignment outside contract'; end if;
+  if tg_op='UPDATE' and (e.end_date is not null or exists(select 1 from youcon_people.engagement_assignments x where x.organization_id=o and x.supersedes_id=old.id) or new.valid_to is null or (old.valid_to is not null and new.valid_to>old.valid_to) or (to_jsonb(new)-'valid_to')<>(to_jsonb(old)-'valid_to')) then raise exception 'assignment history immutable'; end if;
+  if exists(select 1 from youcon_people.engagement_assignments x where x.organization_id=o and x.engagement_id=new.engagement_id and x.id<>new.id and daterange(x.valid_from,x.valid_to,'[)') && daterange(new.valid_from,new.valid_to,'[)')) then raise exception 'assignment overlap'; end if;
+  if new.supersedes_id is not null then
+   select * into strict prev from youcon_people.engagement_assignments where organization_id=o and id=new.supersedes_id and engagement_id=new.engagement_id;
+   if prev.valid_to is distinct from new.valid_from then raise exception 'invalid predecessor boundary'; end if;
+  elsif exists(select 1 from youcon_people.engagement_assignments x where x.organization_id=o and x.engagement_id=new.engagement_id and x.id<>new.id) then raise exception 'predecessor required'; end if;
+  if tg_op='INSERT' then
+  if not exists(select 1 from youcon_people.units where organization_id=o and id=new.unit_id and active) or not exists(select 1 from youcon_people.departments where organization_id=o and id=new.department_id and active) or not exists(select 1 from youcon_people.positions where organization_id=o and id=new.position_id and active) then raise exception 'inactive or foreign catalog'; end if; end if;
+  if new.leader_engagement_id is not null then
+   if new.leader_engagement_id=new.engagement_id or not exists(select 1 from youcon_people.engagements l where l.organization_id=o and l.id=new.leader_engagement_id and l.state='confirmed' and l.start_date<=new.valid_from and (coalesce(l.end_date,l.planned_end_date) is null or (new.valid_to is not null and new.valid_to<=coalesce(l.end_date,l.planned_end_date)+1))) then raise exception 'invalid leader period'; end if;
+   if exists(with recursive chain(id,path,span) as (
+    select new.leader_engagement_id,array[new.engagement_id,new.leader_engagement_id],daterange(new.valid_from,new.valid_to,'[)')
+    union all select a.leader_engagement_id,c.path||a.leader_engagement_id,c.span * daterange(a.valid_from,a.valid_to,'[)') from chain c join youcon_people.engagement_assignments a on a.organization_id=o and a.engagement_id=c.id where a.leader_engagement_id is not null and not a.leader_engagement_id=any(c.path) and daterange(a.valid_from,a.valid_to,'[)') && c.span
+   ) select 1 from chain c join youcon_people.engagement_assignments a on a.organization_id=o and a.engagement_id=c.id where a.leader_engagement_id=new.engagement_id and daterange(a.valid_from,a.valid_to,'[)') && c.span) then raise exception 'leadership cycle'; end if;
+  end if;
+ elsif tg_table_name='person_accounts' then
+  if tg_op='UPDATE' and (old.valid_to is not null or new.valid_to is null or (to_jsonb(new)-'valid_to')<>(to_jsonb(old)-'valid_to')) then raise exception 'association history immutable'; end if;
+  if not exists(select 1 from youcon_people.memberships where organization_id=o and user_id=new.user_id) then raise exception 'account not member of organization'; end if;
+  if exists(select 1 from youcon_people.person_accounts x where x.organization_id=o and x.id<>new.id and (x.person_id=new.person_id or x.user_id=new.user_id) and tstzrange(x.valid_from,x.valid_to,'[)') && tstzrange(new.valid_from,new.valid_to,'[)')) then raise exception 'account overlap'; end if;
+ elsif tg_table_name in ('engagement_clt','engagement_intern','engagement_pj') then
+  select * into strict e from youcon_people.engagements where organization_id=o and id=new.engagement_id;
+  if e.contract_type<>substr(tg_table_name,12) then raise exception 'incompatible contract detail'; end if;
+  if tg_table_name='engagement_intern' then
+ if new.supervisor_engagement_id is not null then
+   if new.supervisor_engagement_id=e.id or not exists(select 1 from youcon_people.engagements s where s.organization_id=o and s.id=new.supervisor_engagement_id and s.state='confirmed' and s.start_date<=e.start_date and (coalesce(s.end_date,s.planned_end_date) is null or (coalesce(e.end_date,e.planned_end_date) is not null and coalesce(s.end_date,s.planned_end_date)>=coalesce(e.end_date,e.planned_end_date)))) then raise exception 'invalid supervisor'; end if;
+  end if; end if;
+ end if;
+ return new;
+end $$;
+create function youcon_people_private.reject_mutation() returns trigger language plpgsql set search_path='' as $$begin raise exception 'append-only history'; end $$;
+create function youcon_people_private.audit_row() returns trigger language plpgsql set search_path='' as $$
+declare delta jsonb:='{}';
+begin
+ if tg_op='UPDATE' and tg_table_name='persons' then delta:=jsonb_build_object('before',jsonb_build_object('full_name',old.full_name,'display_name',old.display_name),'after',jsonb_build_object('full_name',new.full_name,'display_name',new.display_name)); end if;
+ if auth.uid() is null then raise exception 'audit actor required'; end if;
+ insert into youcon_people.audit_events(organization_id,actor_user_id,capability,entity_type,entity_id,action,correlation_id,protected_diff)
+ values(new.organization_id,auth.uid(),'people.command',tg_table_name,new.id,tg_op,pg_catalog.md5(pg_catalog.txid_current()::text)::uuid,delta);
+ return new;
+end $$;
+-- audit_row correlation uses command receipt UUID supplied by trusted function, not client actor.
+create function youcon_people_private.contract_complete() returns trigger language plpgsql security definer set search_path='' as $$
+declare e youcon_people.engagements; eid uuid; n integer; first_date date; last_date date;
+begin
+ if tg_table_name='engagements' then eid:=new.id; else eid:=new.engagement_id; end if;
+ select * into strict e from youcon_people.engagements where organization_id=new.organization_id and id=eid;
+ if e.state='confirmed' then
+  select (select count(*) from youcon_people.engagement_clt where organization_id=e.organization_id and engagement_id=e.id)+(select count(*) from youcon_people.engagement_intern where organization_id=e.organization_id and engagement_id=e.id)+(select count(*) from youcon_people.engagement_pj where organization_id=e.organization_id and engagement_id=e.id) into n;
+  if n<>1 then raise exception 'exactly one contract detail required'; end if;
+  select min(valid_from) into first_date from youcon_people.engagement_assignments where organization_id=e.organization_id and engagement_id=e.id;
+  select valid_to into last_date from youcon_people.engagement_assignments where organization_id=e.organization_id and engagement_id=e.id order by valid_from desc limit 1;
+  if first_date is distinct from e.start_date or last_date is distinct from (coalesce(e.end_date,e.planned_end_date)+1) then raise exception 'assignment chain must cover contract'; end if;
+ end if;
+ return null;
+end $$;
+create trigger integrity before insert or update on youcon_people.units for each row execute function youcon_people_private.guard_integrity();
+create trigger keep_history before delete on youcon_people.units for each row execute function youcon_people_private.reject_mutation();
+create trigger audit after insert or update on youcon_people.units for each row execute function youcon_people_private.audit_row();
+create trigger integrity before insert or update on youcon_people.departments for each row execute function youcon_people_private.guard_integrity();
+create trigger keep_history before delete on youcon_people.departments for each row execute function youcon_people_private.reject_mutation();
+create trigger audit after insert or update on youcon_people.departments for each row execute function youcon_people_private.audit_row();
+create trigger integrity before insert or update on youcon_people.positions for each row execute function youcon_people_private.guard_integrity();
+create trigger keep_history before delete on youcon_people.positions for each row execute function youcon_people_private.reject_mutation();
+create trigger audit after insert or update on youcon_people.positions for each row execute function youcon_people_private.audit_row();
+create trigger integrity before insert or update on youcon_people.persons for each row execute function youcon_people_private.guard_integrity();
+create trigger keep_history before delete on youcon_people.persons for each row execute function youcon_people_private.reject_mutation();
+create trigger audit after insert or update on youcon_people.persons for each row execute function youcon_people_private.audit_row();
+create trigger integrity before insert or update on youcon_people.person_contacts for each row execute function youcon_people_private.guard_integrity();
+create trigger keep_history before delete on youcon_people.person_contacts for each row execute function youcon_people_private.reject_mutation();
+create trigger audit after insert or update on youcon_people.person_contacts for each row execute function youcon_people_private.audit_row();
+create trigger integrity before insert or update on youcon_people.engagements for each row execute function youcon_people_private.guard_integrity();
+create trigger keep_history before delete on youcon_people.engagements for each row execute function youcon_people_private.reject_mutation();
+create trigger audit after insert or update on youcon_people.engagements for each row execute function youcon_people_private.audit_row();
+create trigger integrity before insert or update on youcon_people.engagement_assignments for each row execute function youcon_people_private.guard_integrity();
+create trigger keep_history before delete on youcon_people.engagement_assignments for each row execute function youcon_people_private.reject_mutation();
+create trigger audit after insert or update on youcon_people.engagement_assignments for each row execute function youcon_people_private.audit_row();
+create trigger integrity before insert or update on youcon_people.engagement_clt for each row execute function youcon_people_private.guard_integrity();
+create trigger keep_history before delete on youcon_people.engagement_clt for each row execute function youcon_people_private.reject_mutation();
+create trigger audit after insert or update on youcon_people.engagement_clt for each row execute function youcon_people_private.audit_row();
+create trigger integrity before insert or update on youcon_people.engagement_intern for each row execute function youcon_people_private.guard_integrity();
+create trigger keep_history before delete on youcon_people.engagement_intern for each row execute function youcon_people_private.reject_mutation();
+create trigger audit after insert or update on youcon_people.engagement_intern for each row execute function youcon_people_private.audit_row();
+create trigger integrity before insert or update on youcon_people.service_providers for each row execute function youcon_people_private.guard_integrity();
+create trigger keep_history before delete on youcon_people.service_providers for each row execute function youcon_people_private.reject_mutation();
+create trigger audit after insert or update on youcon_people.service_providers for each row execute function youcon_people_private.audit_row();
+create trigger integrity before insert or update on youcon_people.engagement_pj for each row execute function youcon_people_private.guard_integrity();
+create trigger keep_history before delete on youcon_people.engagement_pj for each row execute function youcon_people_private.reject_mutation();
+create trigger audit after insert or update on youcon_people.engagement_pj for each row execute function youcon_people_private.audit_row();
+create trigger integrity before insert or update on youcon_people.person_accounts for each row execute function youcon_people_private.guard_integrity();
+create trigger keep_history before delete on youcon_people.person_accounts for each row execute function youcon_people_private.reject_mutation();
+create trigger audit after insert or update on youcon_people.person_accounts for each row execute function youcon_people_private.audit_row();
+create trigger integrity before insert or update on youcon_people.change_requests for each row execute function youcon_people_private.guard_integrity();
+create trigger keep_history before delete on youcon_people.change_requests for each row execute function youcon_people_private.reject_mutation();
+create trigger audit after insert or update on youcon_people.change_requests for each row execute function youcon_people_private.audit_row();
+create trigger integrity before insert or update on youcon_people.change_request_items for each row execute function youcon_people_private.guard_integrity();
+create trigger keep_history before delete on youcon_people.change_request_items for each row execute function youcon_people_private.reject_mutation();
+create trigger audit after insert or update on youcon_people.change_request_items for each row execute function youcon_people_private.audit_row();
+create trigger integrity before insert or update on youcon_people.access_exceptions for each row execute function youcon_people_private.guard_integrity();
+create trigger keep_history before delete on youcon_people.access_exceptions for each row execute function youcon_people_private.reject_mutation();
+create trigger audit after insert or update on youcon_people.access_exceptions for each row execute function youcon_people_private.audit_row();
+create constraint trigger complete after insert or update on youcon_people.engagements deferrable initially deferred for each row execute function youcon_people_private.contract_complete();
+create constraint trigger complete after insert or update on youcon_people.engagement_assignments deferrable initially deferred for each row execute function youcon_people_private.contract_complete();
+create constraint trigger complete after insert or update on youcon_people.engagement_clt deferrable initially deferred for each row execute function youcon_people_private.contract_complete();
+create constraint trigger complete after insert or update on youcon_people.engagement_intern deferrable initially deferred for each row execute function youcon_people_private.contract_complete();
+create constraint trigger complete after insert or update on youcon_people.engagement_pj deferrable initially deferred for each row execute function youcon_people_private.contract_complete();
+create trigger immutable before update or delete on youcon_people.audit_events for each row execute function youcon_people_private.reject_mutation();
+grant select,insert on youcon_people.units to youcon_people_executor;
+grant update on youcon_people.units to youcon_people_executor;
+create policy executor on youcon_people.units to youcon_people_executor using(true) with check(true);
+grant select,insert on youcon_people.departments to youcon_people_executor;
+grant update on youcon_people.departments to youcon_people_executor;
+create policy executor on youcon_people.departments to youcon_people_executor using(true) with check(true);
+grant select,insert on youcon_people.positions to youcon_people_executor;
+grant update on youcon_people.positions to youcon_people_executor;
+create policy executor on youcon_people.positions to youcon_people_executor using(true) with check(true);
+grant select,insert on youcon_people.persons to youcon_people_executor;
+grant update on youcon_people.persons to youcon_people_executor;
+create policy executor on youcon_people.persons to youcon_people_executor using(true) with check(true);
+grant select,insert on youcon_people.person_contacts to youcon_people_executor;
+grant update on youcon_people.person_contacts to youcon_people_executor;
+create policy executor on youcon_people.person_contacts to youcon_people_executor using(true) with check(true);
+grant select,insert on youcon_people.engagements to youcon_people_executor;
+grant update on youcon_people.engagements to youcon_people_executor;
+create policy executor on youcon_people.engagements to youcon_people_executor using(true) with check(true);
+grant select,insert on youcon_people.engagement_assignments to youcon_people_executor;
+grant update on youcon_people.engagement_assignments to youcon_people_executor;
+create policy executor on youcon_people.engagement_assignments to youcon_people_executor using(true) with check(true);
+grant select,insert on youcon_people.engagement_clt to youcon_people_executor;
+grant update on youcon_people.engagement_clt to youcon_people_executor;
+create policy executor on youcon_people.engagement_clt to youcon_people_executor using(true) with check(true);
+grant select,insert on youcon_people.engagement_intern to youcon_people_executor;
+grant update on youcon_people.engagement_intern to youcon_people_executor;
+create policy executor on youcon_people.engagement_intern to youcon_people_executor using(true) with check(true);
+grant select,insert on youcon_people.service_providers to youcon_people_executor;
+grant update on youcon_people.service_providers to youcon_people_executor;
+create policy executor on youcon_people.service_providers to youcon_people_executor using(true) with check(true);
+grant select,insert on youcon_people.engagement_pj to youcon_people_executor;
+grant update on youcon_people.engagement_pj to youcon_people_executor;
+create policy executor on youcon_people.engagement_pj to youcon_people_executor using(true) with check(true);
+grant select,insert on youcon_people.person_accounts to youcon_people_executor;
+grant update on youcon_people.person_accounts to youcon_people_executor;
+create policy executor on youcon_people.person_accounts to youcon_people_executor using(true) with check(true);
+grant select,insert on youcon_people.change_requests to youcon_people_executor;
+grant update on youcon_people.change_requests to youcon_people_executor;
+create policy executor on youcon_people.change_requests to youcon_people_executor using(true) with check(true);
+grant select,insert on youcon_people.change_request_items to youcon_people_executor;
+create policy executor on youcon_people.change_request_items to youcon_people_executor using(true) with check(true);
+grant select,insert on youcon_people.access_exceptions to youcon_people_executor;
+grant update on youcon_people.access_exceptions to youcon_people_executor;
+create policy executor on youcon_people.access_exceptions to youcon_people_executor using(true) with check(true);
+grant select,insert on youcon_people.audit_events to youcon_people_executor;
+create policy executor on youcon_people.audit_events to youcon_people_executor using(true) with check(true);
+grant select,insert on youcon_people.operation_receipts to youcon_people_executor;
+create policy executor on youcon_people.operation_receipts to youcon_people_executor using(true) with check(true);
+grant select on youcon_people.organizations to youcon_people_executor;
+create policy executor_read on youcon_people.organizations for select to youcon_people_executor using(true);
+grant select on youcon_people.profiles to youcon_people_executor;
+create policy executor_read on youcon_people.profiles for select to youcon_people_executor using(true);
+grant select on youcon_people.memberships to youcon_people_executor;
+create policy executor_read on youcon_people.memberships for select to youcon_people_executor using(true);
+grant select on youcon_people.membership_roles to youcon_people_executor;
+create policy executor_read on youcon_people.membership_roles for select to youcon_people_executor using(true);
+grant select on youcon_people.roles to youcon_people_executor;
+create policy executor_read on youcon_people.roles for select to youcon_people_executor using(true);
+grant select on youcon_people.permissions to youcon_people_executor;
+create policy executor_read on youcon_people.permissions for select to youcon_people_executor using(true);
+grant select on youcon_people.role_permissions to youcon_people_executor;
+create policy executor_read on youcon_people.role_permissions for select to youcon_people_executor using(true);
+revoke all on function youcon_people_private.lock_org(uuid) from public,anon,authenticated,service_role;
+grant execute on function youcon_people_private.lock_org(uuid) to youcon_people_executor;
+revoke all on function youcon_people_private.guard_integrity() from public,anon,authenticated,service_role;
+grant execute on function youcon_people_private.guard_integrity() to youcon_people_executor;
+revoke all on function youcon_people_private.reject_mutation() from public,anon,authenticated,service_role;
+grant execute on function youcon_people_private.reject_mutation() to youcon_people_executor;
+revoke all on function youcon_people_private.audit_row() from public,anon,authenticated,service_role;
+grant execute on function youcon_people_private.audit_row() to youcon_people_executor;
+revoke all on function youcon_people_private.contract_complete() from public,anon,authenticated,service_role;
+grant execute on function youcon_people_private.contract_complete() to youcon_people_executor;
+grant select on youcon_people.special_grants to youcon_people_executor;
+create policy executor on youcon_people.special_grants for select to youcon_people_executor using(true);
+grant create on schema youcon_people_private to youcon_people_executor;
+alter function youcon_people_private.contract_complete() owner to youcon_people_executor;
+revoke create on schema youcon_people_private from youcon_people_executor;
+-- Inspect only the functions introduced in this lot. Never revoke other apps' defaults.
+do $$begin
+ if exists(select 1 from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid=p.pronamespace cross join lateral pg_catalog.aclexplode(p.proacl) a
+ where ((n.nspname='youcon_people_private' and p.proname='lock_org') or (n.nspname='youcon_people_private' and p.proname='guard_integrity') or (n.nspname='youcon_people_private' and p.proname='reject_mutation') or (n.nspname='youcon_people_private' and p.proname='audit_row') or (n.nspname='youcon_people_private' and p.proname='contract_complete')) and a.grantee<>p.proowner and a.grantee not in ('authenticated'::regrole::oid,'youcon_people_executor'::regrole::oid)) then raise exception 'unexpected inherited function grant'; end if;
+end $$;
+
+commit;

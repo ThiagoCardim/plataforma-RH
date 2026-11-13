@@ -1,0 +1,321 @@
+{
+  "status": "PASS",
+  "postgres": "PostgreSQL 17.6 (Debian 17.6-2.pgdg12+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit",
+  "network": "none; Unix socket via local Docker exec; no remote connection string",
+  "tests": [
+    {
+      "test": "Director creates and HR edits without Auth provisioning",
+      "status": "PASS"
+    },
+    {
+      "test": "Professionals and leadership cannot create",
+      "status": "PASS"
+    },
+    {
+      "test": "Organization and actor cannot be supplied as payload overrides",
+      "status": "PASS"
+    },
+    {
+      "test": "Cross-organization RPC denied",
+      "status": "PASS"
+    },
+    {
+      "test": "Direct authenticated INSERT denied",
+      "status": "PASS"
+    },
+    {
+      "test": "Internal dispatcher execute denied",
+      "status": "PASS"
+    },
+    {
+      "test": "Two current contracts rejected",
+      "status": "PASS"
+    },
+    {
+      "test": "Future contract overlaps open-ended current contract",
+      "status": "PASS"
+    },
+    {
+      "test": "Move department position leader and predecessor",
+      "status": "PASS"
+    },
+    {
+      "test": "Self leadership rejected",
+      "status": "PASS"
+    },
+    {
+      "test": "Leadership cycle rejected",
+      "status": "PASS"
+    },
+    {
+      "test": "Stale contract version rejected",
+      "status": "PASS"
+    },
+    {
+      "test": "Bad supersedes reference rejected even privileged local DML",
+      "status": "PASS"
+    },
+    {
+      "test": "Closing referenced leader rejected",
+      "status": "PASS"
+    },
+    {
+      "test": "Same-day re-entry rejected (inclusive end)",
+      "status": "PASS"
+    },
+    {
+      "test": "Re-entry keeps previous engagement",
+      "status": "PASS"
+    },
+    {
+      "test": "Scheduled intern detail",
+      "status": "PASS"
+    },
+    {
+      "test": "Reject incompatible intern subtype",
+      "status": "PASS"
+    },
+    {
+      "test": "Scheduled clt detail",
+      "status": "PASS"
+    },
+    {
+      "test": "Reject incompatible clt subtype",
+      "status": "PASS"
+    },
+    {
+      "test": "Scheduled pj detail",
+      "status": "PASS"
+    },
+    {
+      "test": "Reject incompatible pj subtype",
+      "status": "PASS"
+    },
+    {
+      "test": "Past associations cannot overlap (closed intervals)",
+      "status": "PASS"
+    },
+    {
+      "test": "Account from foreign organization rejected",
+      "status": "PASS"
+    },
+    {
+      "test": "No self approval",
+      "status": "PASS"
+    },
+    {
+      "test": "Exceptional director review of RH request",
+      "status": "PASS"
+    },
+    {
+      "test": "Second decision rejected",
+      "status": "PASS"
+    },
+    {
+      "test": "Director cannot approve ordinary professional",
+      "status": "PASS"
+    },
+    {
+      "test": "RH reviews professional",
+      "status": "PASS"
+    },
+    {
+      "test": "Request cannot target another person",
+      "status": "PASS"
+    },
+    {
+      "test": "Private read denied without specific grant",
+      "status": "PASS"
+    },
+    {
+      "test": "Private field write denied for ordinary director",
+      "status": "PASS"
+    },
+    {
+      "test": "Management projection excludes private contacts",
+      "status": "PASS"
+    },
+    {
+      "test": "Audit events cannot be updated or deleted",
+      "status": "PASS"
+    },
+    {
+      "test": "Audit has authoritative actors and no contact values",
+      "status": "PASS"
+    },
+    {
+      "test": "Business, audit and receipt atomic rollback",
+      "status": "PASS"
+    },
+    {
+      "test": "Concurrent duplicate submission blocks then replays identical result",
+      "status": "PASS"
+    },
+    {
+      "test": "Concurrent independent overlaps block then reject second transaction",
+      "status": "PASS"
+    },
+    {
+      "test": "Repeatable-read rejected instead of stale integrity snapshot",
+      "status": "PASS"
+    },
+    {
+      "test": "Current contract allows People access",
+      "status": "PASS"
+    },
+    {
+      "test": "Closed contract blocks People and old memberships read",
+      "status": "PASS"
+    },
+    {
+      "test": "Documented exception allows People access only while valid",
+      "status": "PASS"
+    },
+    {
+      "test": "Revoked exception immediately blocks People",
+      "status": "PASS"
+    },
+    {
+      "test": "Other application metadata/data unchanged",
+      "status": "PASS"
+    },
+    {
+      "test": "Executor cannot login, bypass RLS, create roles or alter tables",
+      "status": "PASS"
+    },
+    {
+      "test": "No executable grants on internal command",
+      "status": "PASS"
+    },
+    {
+      "test": "Professional and leadership cannot SELECT Base",
+      "status": "PASS"
+    },
+    {
+      "test": "Manager SELECT RLS excludes foreign organization",
+      "status": "PASS"
+    },
+    {
+      "test": "Anonymous cannot EXECUTE RPC",
+      "status": "PASS"
+    },
+    {
+      "test": "NULL version cannot bypass optimistic locking",
+      "status": "PASS"
+    },
+    {
+      "test": "Reused idempotency key with different body rejected",
+      "status": "PASS"
+    },
+    {
+      "test": "Closed contract cannot be reopened by DML",
+      "status": "PASS"
+    },
+    {
+      "test": "Name corrections retained only in protected audit",
+      "status": "PASS"
+    },
+    {
+      "test": "No private/raw payload in operation receipts",
+      "status": "PASS"
+    },
+    {
+      "test": "Director cannot approve request after requester loses RH role",
+      "status": "PASS"
+    },
+    {
+      "test": "Version conflict records conflict and leaves official data intact",
+      "status": "PASS"
+    },
+    {
+      "test": "Supervisor cannot end before supervised contract",
+      "status": "PASS"
+    },
+    {
+      "test": "Movement closes old assignment from inactive unit and uses active replacement",
+      "status": "PASS"
+    },
+    {
+      "test": "New assignment into inactive unit rejected",
+      "status": "PASS"
+    },
+    {
+      "test": "Expired administrative exceptions do not allow People access",
+      "status": "PASS"
+    },
+    {
+      "test": "Move within fixed-term contract preserves planned boundary",
+      "status": "PASS"
+    },
+    {
+      "test": "Early closure distinguishes actual end from planned end",
+      "status": "PASS"
+    },
+    {
+      "test": "Planned contract endpoint remains historical after early closure",
+      "status": "PASS"
+    },
+    {
+      "test": "Scheduled contract cannot grant access before its start date",
+      "status": "PASS"
+    },
+    {
+      "test": "Cross-organization catalog reference is rejected despite manager rights",
+      "status": "PASS"
+    },
+    {
+      "test": "Cross-organization person reference is rejected despite manager rights",
+      "status": "PASS"
+    },
+    {
+      "test": "Unexpected inherited grant aborts structural lot without changing global defaults",
+      "status": "PASS"
+    },
+    {
+      "test": "Director cannot directly SELECT movement reasons or account identifiers",
+      "status": "PASS"
+    },
+    {
+      "test": "History projection includes movements without private reasons",
+      "status": "PASS"
+    },
+    {
+      "test": "Unexpected inherited EXECUTE aborts privileged function lot atomically",
+      "status": "PASS"
+    },
+    {
+      "test": "Own management edits cannot bypass the no-self-approval workflow",
+      "status": "PASS"
+    },
+    {
+      "test": "Administrative exception cannot use PostgreSQL infinity as an expiry",
+      "status": "PASS"
+    },
+    {
+      "test": "Account rotation cannot bypass self-person approval check",
+      "status": "PASS"
+    },
+    {
+      "test": "Exception tied to closed association does not keep old account eligible",
+      "status": "PASS"
+    },
+    {
+      "test": "Exact quarantine SQL disables new endpoints and preserves data and revocation",
+      "status": "PASS"
+    },
+    {
+      "test": "Separately authorized eligibility backout restores legacy behavior without touching Auth",
+      "status": "PASS"
+    }
+  ],
+  "count": 76,
+  "sql_sha256": {
+    "00-executor.sql.txt": "172388194ef4aeffd92c4429398218c88ad5ec543d79904869b59b7a8fc23b73",
+    "01-estrutura.sql.txt": "454e720377f1fddf90df65039849b5de172b57c008fed2235c6a275fcc58b91a",
+    "02-integridade.sql.txt": "80643b5fc2dcd35b65781ed154a6502e0f793be3687532bc2819d181d56863cf",
+    "03-funcoes.sql.txt": "0ee0f316712acad53241116f908bf75a58977adb8062fb928936187a76cb6fde",
+    "04-ativacao.sql.txt": "44ba018988a4e1de298cb1c095406f3bc9e8bd071bc1e769b1a68d8c2ce34c4a",
+    "R1-quarentena.sql.txt": "447b97e58dafeeb9f8d465a1823ceb4ae8d30edcdb16746598b56e9d585d9ad0",
+    "R2-elegibilidade-legada.sql.txt": "d0561eac4d2093a950fbd1fa0cfed83756ebd0fe8a5a0e55200c79a15579f332"
+  }
+}

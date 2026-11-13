@@ -1,5 +1,7 @@
 # Etapa 03C.1 — persistência: proposta técnica para revisão
 
+> Continuidade: os corpos completos, correções e testes PostgreSQL locais estão em [especificação final](../stage-03c-final/README.md). Este documento e seu SQL preliminar permanecem históricos; não aplicar os dois pacotes.
+
 13/11/2026. Somente documentação. Base: 6adeaa6, interface aprovada da 03B; PR #3 aberta em rascunho, sem merge. Nova branch docs/youcon-people-stage-03c-1. D01–D15 de ../stage-03b/DECISOES.md permanecem vinculantes. Nenhum código de aplicação, autenticação, permissão ou demonstração foi modificado. O SQL acompanha este documento em arquivo .sql.txt, fora de migrations e sem execução automática. Não é pacote pronto para implantação: gates procedurais abaixo são obrigatórios.
 
 ## Diagnóstico e inventário de leitura
