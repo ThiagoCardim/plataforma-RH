@@ -1,5 +1,7 @@
 # Dicionário proposto — Etapa 03A
 
+> Atualização: as decisões aprovadas para a interface estão consolidadas em [Etapa 03B — decisões](../stage-03b/DECISOES.md), que prevalece sobre propostas conflitantes deste registro da 03A. O banco permanece sem autorização de alteração.
+
 Documento complementar a [PLANEJAMENTO.md](PLANEJAMENTO.md). Todos os campos são propostas para revisão; não foram criados objetos. Nomes físicos finais e limites serão fechados na 03B. Cada linha representa um campo; coleções são entidades separadas, não listas livres dentro da pessoa.
 
 ## Convenções aplicáveis a todas as linhas

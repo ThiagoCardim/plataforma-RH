@@ -1,3 +1,5 @@
+> Atualização Etapa 03B: o estado corrente está em [entrega 03B](stage-03b/ENTREGA.md) e [decisões consolidadas](stage-03b/DECISOES.md). A Base Central agora tem telas e simulações em memória; trechos abaixo descrevem entregas anteriores. Nenhuma persistência cadastral nem operação no Supabase foi adicionada.
+
 # Continuidade — fundação YouCon People
 
 Estado consolidado em 11/11/2026. Repositório `ThiagoCardim/plataforma-RH`, branch `feat/youcon-people-foundation`, PR #1 aberto como rascunho, sem merge. A main permanece no commit inicial. Não iniciar nova aplicação.

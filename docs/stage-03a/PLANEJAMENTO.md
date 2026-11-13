@@ -1,5 +1,7 @@
 # YouCon People — Etapa 03A: Base Central de Pessoas
 
+> Atualização: as decisões aprovadas para a interface estão consolidadas em [Etapa 03B — decisões](../stage-03b/DECISOES.md), que prevalece sobre propostas conflitantes deste registro da 03A. O banco permanece sem autorização de alteração.
+
 Data: 13/11/2026. Estado: proposta para revisão, sem aprovação presumida.
 
 ## 1. Escopo e evidências
