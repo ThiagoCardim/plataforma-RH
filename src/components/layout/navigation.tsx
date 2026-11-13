@@ -20,6 +20,9 @@ export function Navigation({
   dashboard: boolean;
 }) {
   const pathname = usePathname();
+  const isActive = (href: string) =>
+    pathname === href ||
+    (href === "/gente-gestao" && pathname.startsWith("/gente-gestao/pessoas"));
   const general = [{ href: "/home", label: "Início", Icon: Home }];
   const managerial = [
     ...(management
@@ -57,10 +60,10 @@ export function Navigation({
                   href={href}
                   title={label}
                   aria-label={label}
-                  aria-current={pathname === href ? "page" : undefined}
+                  aria-current={isActive(href) ? "page" : undefined}
                   className={cn(
                     "sidebar-link flex min-h-11 items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 text-[13px] transition-colors",
-                    pathname === href
+                    isActive(href)
                       ? "nav-active border-white/10 bg-white/[0.07] font-medium text-white"
                       : "text-white/75 hover:bg-white/5 hover:text-white",
                   )}
@@ -70,7 +73,7 @@ export function Navigation({
                     aria-hidden="true"
                     className={cn(
                       "shrink-0",
-                      pathname === href && "text-orange-400",
+                      isActive(href) && "text-orange-400",
                     )}
                   />
                   <span className="sidebar-label">{label}</span>

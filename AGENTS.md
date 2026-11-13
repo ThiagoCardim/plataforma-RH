@@ -15,3 +15,9 @@ YouCon People usa o projeto Supabase existente, compartilhado com outra aplicaç
 Na Etapa 02, **nenhuma alteração no Supabase está autorizada**: não executar migrações, seeds, resets, escritas, DDL ou testes que gravem no projeto compartilhado; não alterar Auth global, Storage, API, extensões ou configurações compartilhadas. Não usar credenciais administrativas para contornar restrições. Somente leitura técnica estritamente necessária é permitida. Testes existentes em PGlite usam banco efêmero local com dados sintéticos, nunca o Supabase compartilhado.
 
 Mudança futura exige apresentação prévia de impacto, objetos afetados, SQL e recuperação, seguida de autorização específica. Preservar autenticação, guardas de servidor, papéis e diferenças CLT/estágio/PJ. Gente & Gestão e dashboard são exclusivos de RH/Diretoria. Não implementar módulos operacionais nesta etapa. Não fazer merge nem publicar em produção.
+
+## Escopo autorizado — Etapa 03B
+
+O pedido desta etapa autoriza as telas da Base Central de Pessoas com dados fictícios exclusivamente locais e simulação em memória, incluindo consulta/cadastro/edição por RH e Diretoria. Ver docs/stage-03b/DECISOES.md para as regras D01–D15 consolidadas. As guardas reais de servidor devem ser preservadas; não liberar rotas para Profissional/Liderança nem introduzir bypass de autenticação para demonstração. Testes de navegador usam somente Auth/Data API sintéticos em loopback, fora da aplicação.
+
+Nenhuma escrita, alteração de schema, Auth, RLS, Storage, grants ou configuração do Supabase está autorizada. Sem novo Supabase, merge ou produção. Preview protegida e PR em rascunho estão autorizados. Cadastro demonstrativo não usa armazenamento persistente nem altera a conta autenticada.

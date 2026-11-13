@@ -35,14 +35,14 @@ O build usa Webpack porque o Turbopack exige portas internas indisponíveis nest
 - Tokens reutilizáveis e componentes Button, Input e Card seguindo shadcn/ui.
 - Organizações, perfis mínimos, vínculos contratuais, papéis acumuláveis e permissões em `youcon_people`, com RLS e grants restritos; função auxiliar em `youcon_people_private`.
 - Armazenamento de sessão exclusivo `youcon-people-auth` e logout de sessão local, preservando as sessões dos outros aplicativos.
-- Base de Gente & Gestão e dashboard são apenas espaços vazios protegidos nesta etapa.
+- Base Central em Gente & Gestão com listagem, cadastro, ficha, edição e histórico demonstrativos, exclusivos de RH/Diretoria; dashboard continua espaço vazio protegido.
 - Testes de guardas do servidor, configuração e SQL/RLS com PGlite. Fixtures de testes não são seeds de aplicação.
 
 Consulte [arquitetura e permissões](docs/ARCHITECTURE.md), [design system](docs/DESIGN_SYSTEM.md), [plano para banco compartilhado](docs/SHARED_DATABASE.md), [relatório da entrega](docs/DELIVERY.md) e [inventário de arquivos](docs/FILES.md).
 
 ## Limites
 
-Não foram implementados módulos completos, cadastros de pessoas, indicadores, importações, funcionalidades de franquias ou integrações externas simuladas. Storage não é necessário nesta etapa. Nenhum dado real de colaborador é incluído.
+Não foram implementados cadastros persistidos, indicadores reais, importações, funcionalidades de franquias ou integrações externas simuladas. Storage não é necessário nesta etapa. Nenhum dado real de colaborador é incluído.
 
 O login real inicial foi validado, mas renovação de sessão, logout real e cenários com todos os papéis ainda exigem homologação. Os testes locais de PostgreSQL não validam esses fluxos hospedados. Não há tela de cadastro público nem provisionamento privilegiado no navegador.
 
@@ -61,3 +61,7 @@ No ambiente cloud atual, usar `NODE_USE_ENV_PROXY=1 npm run dev` com o proxy her
 Evolução incremental da fundação, sem alterações no Supabase compartilhado, autenticação ou permissões. Sidebar recolhível, drawer móvel, breadcrumbs, perfil com vínculo/papéis explícitos, Home com acessos permitidos e estados vazios gerenciais. Consulte o [relatório da etapa visual](docs/STAGE_02_DELIVERY.md) e os [componentes e tokens](docs/DESIGN_SYSTEM.md). As restrições atuais em AGENTS.md/SHARED_DATABASE.md prevalecem sobre propostas históricas de homologação: manter o projeto existente; nenhum novo projeto ou migração para outro banco.
 
 A rodada **02.1** altera a composição da Home, reduz a exposição de módulos futuros e refina sidebar, perfil e estados vazios. [Relatório com comparações antes/depois](docs/STAGE_02_1_DELIVERY.md). A implementação aguarda revisão visual do usuário.
+
+## Etapa 03B — Base Central demonstrativa
+
+Acesse Gente & Gestão → Pessoas com uma conta existente autorizada de RH ou Diretoria. Exemplos fictícios e simulações ficam só em memória, isolados por contexto; um recarregamento reinicia os dados. Não há integração de cadastro ao banco. Consulte [decisões D01–D15](docs/stage-03b/DECISOES.md) e [entrega e verificação](docs/stage-03b/ENTREGA.md). Nenhuma alteração no Supabase compartilhado, Auth, RLS ou permissões foi autorizada ou realizada nesta etapa.
