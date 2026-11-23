@@ -1,8 +1,6 @@
-import { upcomingModules } from "@/modules/navigation/catalog";
-import { renderUpcomingPage } from "@/modules/navigation/upcoming-page";
-export const metadata = {
-  title: upcomingModules["compliance-e-politicas"].label,
-};
+import { redirect } from "next/navigation";
+import { requirePermission } from "@/modules/access/server";
 export default async function Page() {
-  return renderUpcomingPage("compliance-e-politicas");
+  await requirePermission("people.management.view");
+  redirect("/compliance");
 }

@@ -20,9 +20,9 @@ describe("navigation preserves access and existing destinations", () => {
       createElement(Navigation, { management: true, dashboard: true }),
     );
     expect(html.indexOf(">Pessoas<")).toBeLessThan(
-      html.indexOf(">Desempenho e Desenvolvimento<"),
+      html.indexOf(">Desempenho<"),
     );
-    expect(html.indexOf(">Desempenho e Desenvolvimento<")).toBeLessThan(
+    expect(html.indexOf(">Desempenho<")).toBeLessThan(
       html.indexOf(">Políticas<"),
     );
     expect(html.indexOf(">Políticas<")).toBeLessThan(

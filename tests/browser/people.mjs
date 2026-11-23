@@ -21,7 +21,8 @@ const navigationPages = [
   ["metas-dos-lideres", "Metas dos Líderes"],
   ["youcon-academy", "YouCon Academy"],
   ["cultura", "Cultura"],
-  ["compliance-e-politicas", "Compliance e Políticas"],
+  ["compliance", "Compliance"],
+  ["politicas-internas", "Políticas Internas"],
   ["programa-de-indicacao-de-vagas", "Programa de Indicação de Vagas"],
 ];
 await mkdir("work/navigation-review", { recursive: true });
@@ -441,7 +442,7 @@ try {
     const nav = page
       .locator(".desktop-sidebar")
       .getByRole("navigation", { name: "Navegação principal", exact: true });
-    assert.equal(await nav.getByRole("link").count(), 12);
+    assert.equal(await nav.getByRole("link").count(), 13);
     assert.equal(
       await nav
         .getByRole("link", { name: "Gente & Gestão", exact: true })
@@ -610,7 +611,7 @@ try {
           people: "work/stage-03b",
           navigation: "work/navigation-review",
         },
-        flow: "People regression + 9 module links + role guards + collapsed/mobile navigation",
+        flow: "People regression + 10 module links + role guards + collapsed/mobile navigation",
       },
       null,
       2,

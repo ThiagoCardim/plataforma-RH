@@ -23,21 +23,21 @@ export const upcomingModules = {
   },
   "avaliacao-de-desempenho": {
     label: "Avaliação de Desempenho",
-    group: "Desempenho e Desenvolvimento",
+    group: "Desempenho",
     icon: "performance",
     description:
       "Conversas e perspectivas para acompanhar o desempenho e orientar o desenvolvimento.",
   },
   "metas-dos-lideres": {
     label: "Metas dos Líderes",
-    group: "Desempenho e Desenvolvimento",
+    group: "Desempenho",
     icon: "goals",
     description:
       "Clareza de objetivos para conectar a atuação das lideranças aos resultados da organização.",
   },
   "youcon-academy": {
     label: "YouCon Academy",
-    group: "Desempenho e Desenvolvimento",
+    group: "Desempenho",
     icon: "academy",
     description:
       "Aprendizado e conhecimento para construir novas possibilidades.",
@@ -49,12 +49,19 @@ export const upcomingModules = {
     description:
       "Os valores e as atitudes que conectam as pessoas e dão forma à nossa cultura.",
   },
-  "compliance-e-politicas": {
-    label: "Compliance e Políticas",
+  compliance: {
+    label: "Compliance",
     group: "Políticas",
     icon: "policies",
     description:
       "Referências e orientações para uma atuação responsável, ética e transparente.",
+  },
+  "politicas-internas": {
+    label: "Políticas Internas",
+    group: "Políticas",
+    icon: "policies",
+    description:
+      "Um espaço para reunir as políticas internas e as orientações da organização.",
   },
   "programa-de-indicacao-de-vagas": {
     label: "Programa de Indicação de Vagas",

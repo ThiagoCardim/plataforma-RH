@@ -12,15 +12,16 @@ Início permanece na área geral. Colaboradores substitui o rótulo Gente & Gest
 | Pessoas | Onboarding e Offboarding | /onboarding-offboarding | Página inicial navegável |
 | Pessoas | Plano de Carreira | /plano-de-carreira | Página inicial navegável |
 | Pessoas | Home Office | /home-office | Página inicial navegável |
-| Desempenho e Desenvolvimento | Avaliação de Desempenho | /avaliacao-de-desempenho | Página inicial navegável |
-| Desempenho e Desenvolvimento | Metas dos Líderes | /metas-dos-lideres | Página inicial navegável |
-| Desempenho e Desenvolvimento | YouCon Academy | /youcon-academy | Página inicial navegável |
+| Desempenho | Avaliação de Desempenho | /avaliacao-de-desempenho | Página inicial navegável |
+| Desempenho | Metas dos Líderes | /metas-dos-lideres | Página inicial navegável |
+| Desempenho | YouCon Academy | /youcon-academy | Página inicial navegável |
 | Políticas | Cultura | /cultura | Página inicial navegável |
-| Políticas | Compliance e Políticas | /compliance-e-politicas | Página inicial navegável |
+| Políticas | Compliance | /compliance | Página inicial navegável |
+| Políticas | Políticas Internas | /politicas-internas | Página inicial navegável |
 | Políticas | Programa de Indicação de Vagas | /programa-de-indicacao-de-vagas | Página inicial navegável |
 | Visão gerencial | Dashboard Gerencial | /gente-gestao/dashboard | Página gerencial existente preservada |
 
-As nove páginas novas têm título, descrição específica, estado “Em preparação” e retorno ao Início. Estão prontas para receber funcionalidades, sem controles ou dados que simulem módulos operacionais inexistentes. Comunicação e outros módulos históricos em planejamento não foram implementados por consequência desta reorganização.
+As dez páginas iniciais têm título, descrição específica, estado “Em preparação” e retorno ao Início. Estão prontas para receber funcionalidades, sem controles ou dados que simulem módulos operacionais inexistentes. Comunicação e outros módulos históricos em planejamento não foram implementados por consequência desta reorganização.
 
 ## Permissões e implementação
 
@@ -32,9 +33,11 @@ Nenhum diff em políticas de acesso, clientes Supabase, proxy, ações Auth, sch
 
 ## Validação
 
+Ajuste pontual posterior: Desempenho mantém suas três opções; Compliance e Políticas Internas possuem páginas independentes sob a mesma guarda. Lint, typecheck e os 24 testes específicos de navegação/acesso passaram. Os resultados abaixo registram a validação da reorganização inicial.
+
 - Lint e typecheck aprovados.
 - 87 testes em 10 arquivos aprovados, incluindo 22 casos da navegação/guardas dos novos módulos. Após corrigir a extensão do import dinâmico do teste, os 22 casos específicos passaram novamente sem o aviso do Vite.
-- Build Next.js 16.4.1 Webpack aprovado; todas as nove rotas são dinâmicas e autenticadas.
+- Build Next.js 16.4.1 Webpack aprovado; todas as dez rotas são dinâmicas e autenticadas.
 - Chromium na aplicação compilada, com Auth/Data API sintéticos exclusivamente em loopback: RH e Diretoria abrem todas as páginas pelo menu; Profissional e Liderança são bloqueados por acesso direto; anônimo redireciona ao login.
 - Regressão de Colaboradores: busca, filtros combinados, paginação, formulário/validações, campos CLT/estágio/PJ, edição, histórico, descarte no reload e isolamento do contexto de organização.
 - Menu aberto/recolhido, destaque ativo, breadcrumbs e menu móvel, navegação até o Dashboard e Escape com retorno de foco. Sem erros JavaScript nos fluxos finais. Larguras 360/390/768/1024/1440 px sem overflow horizontal da página.
@@ -42,6 +45,8 @@ Nenhum diff em políticas de acesso, clientes Supabase, proxy, ações Auth, sch
 Reprodução: o teste existente tests/browser/people.mjs foi estendido para os novos caminhos. Usar a configuração de loopback e `RUN_BUILT_APP=1` documentadas na entrega 03B. O teste não fornece um bypass de autenticação na aplicação e não comprova sessões reais hospedadas. Screenshots usam conta, organização e pessoas fictícias. Nenhum dado pessoal do banco foi consultado para esta revisão visual.
 
 ## Capturas
+
+As capturas abaixo registram a primeira reorganização. Após os ajustes de rótulos, a categoria passa a Desempenho, com Compliance e Políticas Internas separados. A URL anterior /compliance-e-politicas redireciona para /compliance, preservando a guarda gerencial.
 
 - [Menu desktop e página inicial](review/menu-desktop.png)
 - [Colaboradores preservado](review/colaboradores-desktop.png)

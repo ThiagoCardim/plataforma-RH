@@ -22,7 +22,7 @@ export function Navigation({
       links: [{ href: "/home", label: "Início", icon: "home" }],
     },
     ...(management
-      ? ["Pessoas", "Desempenho e Desenvolvimento", "Políticas"].map(
+      ? ["Pessoas", "Desempenho", "Políticas"].map(
           (title) => ({
             title,
             links: [
