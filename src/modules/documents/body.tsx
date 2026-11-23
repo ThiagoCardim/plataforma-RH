@@ -1,10 +1,21 @@
 /* eslint-disable @next/next/no-img-element -- Local blob images. */
+import { FileCard } from "./file-card";
 import { type Block, safeLink } from "./model";
 export function Body({ blocks }: { blocks: Block[] }) {
   return (
     <div className="space-y-5 leading-7">
       {blocks.map((b) =>
-        b.type === "title" ? (
+        b.type === "file" ? (
+          <div key={b.id}>
+            {b.file ? (
+              <FileCard file={b.file} />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Selecione um arquivo no editor.
+              </p>
+            )}
+          </div>
+        ) : b.type === "title" ? (
           <h2 key={b.id} className="mt-8 text-xl font-semibold tracking-tight">
             {b.text}
           </h2>

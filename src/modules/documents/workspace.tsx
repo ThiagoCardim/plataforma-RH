@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element -- In-memory blob previews cannot use the image optimizer. */
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -12,7 +11,6 @@ import {
   Copy,
   Archive,
   ArrowLeft,
-  Paperclip,
   CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,6 +27,7 @@ import {
   statuses,
   audiences,
   snapshot,
+  contentBlocks,
 } from "./model";
 const blank: Content = {
   title: "",
@@ -257,47 +256,7 @@ export function DocumentWorkspace({
                   </Button>
                 </div>
               )}
-              <Body blocks={content.blocks} />
-              <section className="mt-8 border-t pt-6">
-                <h2 className="section-title mb-3">
-                  Anexos ({content.attachments.length})
-                </h2>
-                {!content.attachments.length && (
-                  <p className="text-sm text-muted-foreground">
-                    Nenhum anexo nesta versão.
-                  </p>
-                )}
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {content.attachments.map((a) => (
-                    <div key={a.id} className="rounded-lg border p-4">
-                      {a.type.startsWith("image/") &&
-                        a.url.startsWith("blob:") && (
-                          <img
-                            src={a.url}
-                            alt={a.name}
-                            className="mb-3 max-h-40 rounded"
-                          />
-                        )}
-                      <Paperclip size={16} />
-                      <p className="mt-2 break-words text-sm font-medium">
-                        {a.name}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {Math.ceil(a.size / 1024)} KB · arquivo local
-                      </p>
-                      {a.url.startsWith("blob:") && (
-                        <a
-                          href={a.url}
-                          download={a.name}
-                          className="mt-3 inline-block text-xs text-primary underline"
-                        >
-                          Abrir / baixar anexo
-                        </a>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </section>
+              <Body blocks={contentBlocks(content)} />
             </article>
             {content.requireRead && content.status === "Ativa" && !version && (
               <div className="mx-auto mt-5 flex max-w-4xl flex-wrap items-center justify-between gap-4 rounded-xl border bg-card p-5">

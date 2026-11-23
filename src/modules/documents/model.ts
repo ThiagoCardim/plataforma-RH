@@ -9,9 +9,10 @@ export const statuses = [
 export type Status = (typeof statuses)[number];
 export type Block = {
   id: string;
-  type: "title" | "text" | "list" | "table" | "image" | "link";
+  type: "title" | "text" | "list" | "table" | "image" | "link" | "file";
   text: string;
   url?: string;
+  file?: Attachment;
 };
 export type Attachment = {
   id: string;
@@ -89,4 +90,17 @@ export function snapshot(doc: Content): Content {
     attachments: doc.attachments,
     requireRead: doc.requireRead,
   });
+}
+
+// Preserve older local versions by presenting their attachments as trailing blocks.
+export function contentBlocks(content: Content): Block[] {
+  return [
+    ...content.blocks,
+    ...content.attachments.map((file) => ({
+      id: `legacy-${file.id}`,
+      type: "file" as const,
+      text: "",
+      file,
+    })),
+  ];
 }

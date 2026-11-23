@@ -667,7 +667,28 @@ try {
     await page
       .getByLabel("Título", { exact: true })
       .fill("Manual fictício de teste");
-    await page.getByLabel("Adicionar anexos").setInputFiles({
+    await page.getByRole("button", { name: "+ Arquivo", exact: true }).click();
+    await page.getByLabel("Selecionar arquivo", { exact: true }).setInputFiles({
+      name: "exemplo.pdf",
+      mimeType: "application/pdf",
+      buffer: Buffer.from("%PDF-1.4 demo"),
+    });
+    await page
+      .getByRole("button", { name: "Subir bloco 2", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Descer bloco 1", exact: true })
+      .click();
+    await page.getByLabel("Substituir arquivo", { exact: true }).setInputFiles({
+      name: "demonstracao.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from("Demonstração"),
+    });
+    await page.getByText("demonstracao.txt", { exact: true }).waitFor();
+    await page
+      .getByRole("button", { name: "Remover arquivo", exact: true })
+      .click();
+    await page.getByLabel("Selecionar arquivo", { exact: true }).setInputFiles({
       name: "exemplo.pdf",
       mimeType: "application/pdf",
       buffer: Buffer.from("%PDF-1.4 demo"),

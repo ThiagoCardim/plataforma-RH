@@ -7,6 +7,7 @@ import {
   safeLink,
   differences,
   snapshot,
+  contentBlocks,
 } from "@/modules/documents/model";
 describe("Document authorization projections", () => {
   for (const audience of ["CLT", "Estágio", "PJ"])
@@ -34,6 +35,22 @@ describe("Document authorization projections", () => {
     expect(readerProjection(d).title).not.toBe("Unpublished change");
     d.status = "Arquivada";
     expect(readable(d, "CLT")).toBe(false);
+  });
+  it("preserves legacy attachments as ordered blocks without mutating history", () => {
+    const doc = demoDocuments(true, "CLT")[0];
+    doc.attachments = [
+      {
+        id: "legacy",
+        name: "teste.docx",
+        size: 50,
+        type: "application/octet-stream",
+        url: "blob:demo",
+      },
+    ];
+    const blocks = contentBlocks(doc);
+    expect(blocks.at(-1)?.file?.name).toBe("teste.docx");
+    expect(doc.blocks.some((b) => b.type === "file")).toBe(false);
+    expect(contentBlocks({ ...doc, blocks, attachments: [] })).toEqual(blocks);
   });
   it("blocks script and data URLs", () => {
     expect(safeLink("javascript:alert(1)")).toBeUndefined();

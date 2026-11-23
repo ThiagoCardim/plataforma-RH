@@ -4,7 +4,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, Textarea } from "@/components/ui/fields";
-import { type Content, type Block, statuses, audiences } from "./model";
+import {
+  type Content,
+  type Block,
+  statuses,
+  audiences,
+  contentBlocks,
+} from "./model";
+import { FileCard } from "./file-card";
 import { Body } from "./body";
 import { useDocuments } from "./store";
 export function DocumentEditor({
@@ -16,7 +23,11 @@ export function DocumentEditor({
   onSave: (data: Content) => void;
   onCancel: () => void;
 }) {
-  const [data, setData] = useState(() => structuredClone(initial));
+  const [data, setData] = useState<Content>(() => ({
+    ...structuredClone(initial),
+    blocks: structuredClone(contentBlocks(initial)),
+    attachments: [],
+  }));
   const [error, setError] = useState("");
   const [preview, setPreview] = useState(false);
   const { track } = useDocuments();
@@ -27,30 +38,42 @@ export function DocumentEditor({
       blocks: data.blocks.map((b) => (b.id === id ? { ...b, ...patch } : b)),
     });
   }
-  function files(list: FileList | null, imageBlock?: string) {
-    if (!list) return;
-    const attachments = [...data.attachments];
-    for (const file of Array.from(list)) {
-      const valid = imageBlock
-        ? /\.(png|jpe?g|webp|gif)$/i.test(file.name)
-        : /\.(pdf|docx?|png|jpe?g|webp|gif)$/i.test(file.name);
-      if (!valid || file.size > 10 * 1024 * 1024) {
-        setError("Use PDF, Word ou imagens de até 10 MB.");
-        continue;
-      }
-      const url = URL.createObjectURL(file);
-      track(url);
-      if (imageBlock) block(imageBlock, { url, text: file.name });
-      else
-        attachments.push({
-          id: crypto.randomUUID(),
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          url,
-        });
+  function files(list: FileList | null, id: string, image = false) {
+    const file = list?.[0];
+    if (!file) return;
+    if (
+      file.size > 10 * 1024 * 1024 ||
+      (image && !/\.(png|jpe?g|webp|gif)$/i.test(file.name))
+    ) {
+      setError(
+        image ? "Use imagens de até 10 MB." : "Use arquivos de até 10 MB.",
+      );
+      return;
     }
-    if (!imageBlock) update({ attachments });
+    setError("");
+    const previewable = /^(application\/pdf|image\/(png|jpeg|webp|gif))$/.test(
+      file.type,
+    );
+    const url = URL.createObjectURL(
+      new Blob([file], {
+        type: previewable ? file.type : "application/octet-stream",
+      }),
+    );
+    track(url);
+    block(
+      id,
+      image
+        ? { url, text: file.name }
+        : {
+            file: {
+              id: crypto.randomUUID(),
+              name: file.name,
+              size: file.size,
+              type: file.type,
+              url,
+            },
+          },
+    );
   }
   return (
     <form
@@ -179,6 +202,7 @@ export function DocumentEditor({
               ["table", "Tabela"],
               ["image", "Imagem"],
               ["link", "Link"],
+              ["file", "Arquivo"],
             ] as const
           ).map(([type, label]) => (
             <Button
@@ -214,6 +238,7 @@ export function DocumentEditor({
                         table: "Tabela",
                         image: "Imagem",
                         link: "Link",
+                        file: "Arquivo",
                       } as const
                     )[b.type]
                   }
@@ -237,6 +262,20 @@ export function DocumentEditor({
                     type="button"
                     variant="ghost"
                     size="sm"
+                    disabled={i === data.blocks.length - 1}
+                    aria-label={`Descer bloco ${i + 1}`}
+                    onClick={() => {
+                      const blocks = [...data.blocks];
+                      [blocks[i], blocks[i + 1]] = [blocks[i + 1], blocks[i]];
+                      update({ blocks });
+                    }}
+                  >
+                    ↓
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
                     aria-label={`Remover bloco ${i + 1}`}
                     onClick={() =>
                       update({
@@ -248,18 +287,52 @@ export function DocumentEditor({
                   </Button>
                 </div>
               </div>
-              <label className="text-xs">
-                {b.type === "image" ? "Descrição da imagem" : "Conteúdo"}
-                <Textarea
-                  aria-label={
-                    b.type === "image" ? "Descrição da imagem" : "Conteúdo"
-                  }
-                  value={b.text}
-                  maxLength={20000}
-                  className={b.type === "title" ? "text-xl font-semibold" : ""}
-                  onChange={(e) => block(b.id, { text: e.target.value })}
-                />
-              </label>
+              {b.type !== "file" && (
+                <label className="text-xs">
+                  {b.type === "image" ? "Descrição da imagem" : "Conteúdo"}
+                  <Textarea
+                    aria-label={
+                      b.type === "image" ? "Descrição da imagem" : "Conteúdo"
+                    }
+                    value={b.text}
+                    maxLength={20000}
+                    className={
+                      b.type === "title" ? "text-xl font-semibold" : ""
+                    }
+                    onChange={(e) => block(b.id, { text: e.target.value })}
+                  />
+                </label>
+              )}
+              {b.type === "file" && (
+                <div className="space-y-3">
+                  {b.file && <FileCard file={b.file} />}
+                  <label className="block text-xs">
+                    {b.file ? "Substituir arquivo" : "Selecionar arquivo"} · até
+                    10 MB
+                    <input
+                      type="file"
+                      aria-label={
+                        b.file ? "Substituir arquivo" : "Selecionar arquivo"
+                      }
+                      className="mt-2 block w-full text-xs"
+                      onChange={(e) => {
+                        files(e.target.files, b.id);
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                  {b.file && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => block(b.id, { file: undefined })}
+                    >
+                      Remover arquivo
+                    </Button>
+                  )}
+                </div>
+              )}
               {b.type === "link" && (
                 <label className="mt-3 block text-xs">
                   Endereço do link
@@ -278,7 +351,10 @@ export function DocumentEditor({
                     <input
                       type="file"
                       accept="image/png,image/jpeg,image/webp,image/gif"
-                      onChange={(e) => files(e.target.files, b.id)}
+                      onChange={(e) => {
+                        files(e.target.files, b.id, true);
+                        e.target.value = "";
+                      }}
                       className="mt-2 block w-full text-xs"
                     />
                   </label>
@@ -294,44 +370,6 @@ export function DocumentEditor({
             </div>
           ))}
         </div>
-      </section>
-      <section className="rounded-xl border bg-card p-5">
-        <h2 className="section-title mb-3">Anexos</h2>
-        <label className="block rounded-xl border border-dashed p-5 text-sm">
-          Adicionar PDF, Word ou imagens · até 10 MB
-          <input
-            aria-label="Adicionar anexos"
-            type="file"
-            multiple
-            accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp,.gif"
-            className="mt-3 block w-full text-xs"
-            onChange={(e) => files(e.target.files)}
-          />
-        </label>
-        <ul className="mt-4 space-y-2">
-          {data.attachments.map((a) => (
-            <li
-              key={a.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-muted p-3 text-sm"
-            >
-              <span>
-                {a.name} · {Math.ceil(a.size / 1024)} KB
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                type="button"
-                onClick={() =>
-                  update({
-                    attachments: data.attachments.filter((v) => v.id !== a.id),
-                  })
-                }
-              >
-                Remover anexo
-              </Button>
-            </li>
-          ))}
-        </ul>
       </section>
       <div className="flex justify-end gap-3">
         <Button

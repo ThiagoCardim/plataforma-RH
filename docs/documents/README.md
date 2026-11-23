@@ -7,7 +7,7 @@ Políticas Internas (`/politicas-internas`) e Compliance (`/compliance`) usam os
 - Tabela e cards; pesquisa pelo título; filtros combináveis por categoria, público e status; limpeza de filtros e estado vazio.
 - Criação, edição, duplicação como rascunho e arquivamento confirmado.
 - Editor por blocos: título, texto, lista, tabela (colunas separadas por `|`), imagem local e link HTTP(S). Inclusão, remoção e reordenação de blocos, com pré-visualização formatada.
-- Anexos PDF, Word e imagens, até 10 MB por arquivo: seleção local, lista, remoção, miniaturas de imagens e download. PDF/Word aparecem como cartões de arquivo; não há conversor de Word nem upload remoto.
+- Bloco Arquivo na barra do editor: PDF, Word e outros formatos, até 10 MB por arquivo. Pode ser intercalado e reordenado com os demais blocos, substituído ou removido. O cartão mostra nome, formato e tamanho; oferece download e visualização de PDF/imagens compatíveis. Outros formatos são baixados. Não há upload remoto. Anexos de versões anteriores são apresentados como blocos ao final do conteúdo, preservando o histórico.
 - Categorias livres, etiquetas personalizadas, públicos CLT/Estágio/PJ e cinco estados: Rascunho, Em revisão, Em implantação, Ativa e Arquivada.
 - Página individual, histórico de versões com autor/data/campos alterados e visualização de versões anteriores. Edição de documento ativo começa como rascunho e mantém a versão publicada anterior até nova publicação.
 - Confirmação de leitura simulada por versão. Salvar uma nova versão reinicia a confirmação local.
