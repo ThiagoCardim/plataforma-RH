@@ -1,0 +1,27 @@
+import {
+  Users,
+  Route,
+  TrendingUp,
+  Laptop,
+  ChartNoAxesCombined,
+  Target,
+  GraduationCap,
+  Heart,
+  ShieldCheck,
+  UserRoundPlus,
+  Home,
+} from "lucide-react";
+export const navigationIcons = {
+  people: Users,
+  journey: Route,
+  career: TrendingUp,
+  remote: Laptop,
+  performance: ChartNoAxesCombined,
+  goals: Target,
+  academy: GraduationCap,
+  culture: Heart,
+  policies: ShieldCheck,
+  referrals: UserRoundPlus,
+  home: Home,
+  dashboard: ChartNoAxesCombined,
+};

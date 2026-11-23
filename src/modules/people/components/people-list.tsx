@@ -50,7 +50,7 @@ export function PeopleList() {
     <div className="space-y-7">
       <header className="flex flex-wrap items-end justify-between gap-5">
         <div>
-          <p className="section-kicker mb-3">Gente & Gestão / Base central</p>
+          <p className="section-kicker mb-3">Pessoas / Colaboradores</p>
           <h1 className="page-title">Pessoas que constroem.</h1>
           <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
             Uma visão próxima de cada pessoa e de sua trajetória na organização.

@@ -105,7 +105,7 @@ export default async function Home() {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-semibold">
-                      Gente & Gestão
+                      Colaboradores
                     </span>
                     <span className="mt-1 block text-xs text-muted-foreground">
                       Espaço gerencial em preparação.

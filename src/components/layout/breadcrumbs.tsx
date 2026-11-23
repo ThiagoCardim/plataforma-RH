@@ -2,12 +2,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight } from "lucide-react";
+import { routeLabel } from "@/modules/navigation/catalog";
 export function Breadcrumbs() {
   const pathname = usePathname();
-  const dashboard = pathname === "/gente-gestao/dashboard";
-  const management = pathname.startsWith("/gente-gestao");
-  const people = pathname.startsWith("/gente-gestao/pessoas");
-  const personPage = people && pathname !== "/gente-gestao/pessoas";
+  const personPage = pathname.startsWith("/gente-gestao/pessoas/");
   return (
     <nav
       aria-label="Localização"
@@ -22,11 +20,11 @@ export function Breadcrumbs() {
         <li aria-hidden="true">
           <ChevronRight size={12} />
         </li>
-        {(dashboard || personPage) && (
+        {personPage && (
           <>
             <li>
               <Link href="/gente-gestao" className="hover:text-primary">
-                Gente & Gestão
+                Colaboradores
               </Link>
             </li>
             <li aria-hidden="true">
@@ -35,19 +33,7 @@ export function Breadcrumbs() {
           </>
         )}
         <li aria-current="page" className="font-medium text-foreground">
-          {dashboard
-            ? "Dashboard gerencial"
-            : people
-              ? pathname.endsWith("/nova")
-                ? "Cadastrar pessoa"
-                : pathname.endsWith("/editar")
-                  ? "Editar pessoa"
-                  : personPage
-                    ? "Ficha da pessoa"
-                    : "Pessoas"
-              : management
-                ? "Gente & Gestão"
-                : "Início"}
+          {routeLabel(pathname)}
         </li>
       </ol>
     </nav>

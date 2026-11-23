@@ -13,6 +13,18 @@ const port = 3103,
   apiPort = 3104;
 const base = `http://127.0.0.1:${port}`;
 await mkdir("work/stage-03b", { recursive: true });
+const navigationPages = [
+  ["onboarding-offboarding", "Onboarding e Offboarding"],
+  ["plano-de-carreira", "Plano de Carreira"],
+  ["home-office", "Home Office"],
+  ["avaliacao-de-desempenho", "Avaliação de Desempenho"],
+  ["metas-dos-lideres", "Metas dos Líderes"],
+  ["youcon-academy", "YouCon Academy"],
+  ["cultura", "Cultura"],
+  ["compliance-e-politicas", "Compliance e Políticas"],
+  ["programa-de-indicacao-de-vagas", "Programa de Indicação de Vagas"],
+];
+await mkdir("work/navigation-review", { recursive: true });
 const violations = [],
   requests = [];
 const api = createServer((req, res) => {
@@ -136,9 +148,12 @@ try {
     ]);
     return ctx;
   }
-  const routes = ["", "/nova", "/demo-1", "/demo-1/editar"].map(
-    (p) => `/gente-gestao/pessoas${p}`,
-  );
+  const routes = ["", "/nova", "/demo-1", "/demo-1/editar"]
+    .map((p) => `/gente-gestao/pessoas${p}`)
+    .concat(
+      navigationPages.map(([slug]) => `/${slug}`),
+      "/gente-gestao/dashboard",
+    );
   const anonymous = await browser.newContext();
   const anonPage = await anonymous.newPage();
   await anonPage.goto(`${base}${routes[0]}`);
@@ -416,6 +431,168 @@ try {
         .then((text) => text.includes("Teste Fictício")),
       false,
     );
+    await page.setViewportSize({ width: 1440, height: 1280 });
+    await page.waitForFunction(
+      () =>
+        document.querySelector("main").getBoundingClientRect().left >=
+        document.querySelector(".desktop-sidebar").getBoundingClientRect()
+          .right,
+    );
+    const nav = page
+      .locator(".desktop-sidebar")
+      .getByRole("navigation", { name: "Navegação principal", exact: true });
+    assert.equal(await nav.getByRole("link").count(), 12);
+    assert.equal(
+      await nav
+        .getByRole("link", { name: "Gente & Gestão", exact: true })
+        .count(),
+      0,
+    );
+    for (const [slug, label] of navigationPages) {
+      await nav.getByRole("link", { name: label, exact: true }).click();
+      await page.getByRole("heading", { name: label, exact: true }).waitFor();
+      await page.getByText("Em preparação", { exact: true }).waitFor();
+      assert.equal(new URL(page.url()).pathname, `/${slug}`);
+      assert.equal(await nav.locator('a[aria-current="page"]').count(), 1);
+      assert.equal(
+        await nav
+          .getByRole("link", { name: label, exact: true })
+          .getAttribute("aria-current"),
+        "page",
+      );
+      const crumb = page.getByRole("navigation", {
+        name: "Localização",
+        exact: true,
+      });
+      await crumb.getByText(label, { exact: true }).waitFor();
+    }
+    await nav
+      .getByRole("link", { name: "Dashboard Gerencial", exact: true })
+      .click();
+    await page
+      .getByRole("heading", { name: "Dashboard gerencial", exact: true })
+      .waitFor();
+    assert.equal(
+      await nav
+        .getByRole("link", { name: "Colaboradores", exact: true })
+        .getAttribute("aria-current"),
+      null,
+    );
+    await nav.getByRole("link", { name: "Colaboradores", exact: true }).click();
+    await page
+      .getByRole("heading", { name: "Pessoas que constroem." })
+      .waitFor();
+    assert.equal(await page.locator("tbody tr").count(), 8);
+    if (role === "director") {
+      await nav.evaluate((el) => {
+        el.scrollTop = 0;
+      });
+      await page.screenshot({
+        path: "work/navigation-review/colaboradores-desktop.png",
+        fullPage: true,
+        animations: "disabled",
+      });
+      await nav
+        .getByRole("link", { name: "Onboarding e Offboarding", exact: true })
+        .click();
+      await page
+        .getByRole("heading", { name: "Onboarding e Offboarding", exact: true })
+        .waitFor();
+      await nav.evaluate((el) => {
+        el.scrollTop = 0;
+      });
+      await page.screenshot({
+        path: "work/navigation-review/menu-desktop.png",
+        fullPage: true,
+        animations: "disabled",
+      });
+      await page
+        .getByRole("button", { name: "Recolher navegação", exact: true })
+        .click();
+      await page.waitForFunction(
+        () =>
+          document.querySelector(".desktop-sidebar").getBoundingClientRect()
+            .width === 76,
+      );
+      assert.equal(
+        await nav
+          .getByRole("link", { name: "YouCon Academy", exact: true })
+          .getAttribute("title"),
+        "YouCon Academy",
+      );
+      await nav
+        .getByRole("link", { name: "YouCon Academy", exact: true })
+        .click();
+      await page
+        .getByRole("heading", { name: "YouCon Academy", exact: true })
+        .waitFor();
+      await page
+        .getByRole("button", { name: "Expandir navegação", exact: true })
+        .click();
+      for (const width of [360, 390, 768, 1024, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        assert.equal(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+          true,
+          `navigation overflow ${width}`,
+        );
+      }
+      await page.setViewportSize({ width: 390, height: 900 });
+      await page
+        .getByRole("button", { name: "Abrir navegação", exact: true })
+        .click();
+      const dialog = page.getByRole("dialog", {
+        name: "Navegação principal",
+        exact: true,
+      });
+      await dialog.waitFor();
+      await page.screenshot({
+        path: "work/navigation-review/menu-mobile.png",
+        fullPage: true,
+        animations: "disabled",
+      });
+      await dialog
+        .getByRole("link", {
+          name: "Programa de Indicação de Vagas",
+          exact: true,
+        })
+        .click();
+      await page
+        .getByRole("heading", {
+          name: "Programa de Indicação de Vagas",
+          exact: true,
+        })
+        .waitFor();
+      await dialog.waitFor({ state: "hidden" });
+      await page.screenshot({
+        path: "work/navigation-review/pagina-mobile.png",
+        fullPage: true,
+        animations: "disabled",
+      });
+      await page
+        .getByRole("button", { name: "Abrir navegação", exact: true })
+        .click();
+      await dialog
+        .getByRole("link", { name: "Dashboard Gerencial", exact: true })
+        .click();
+      await page
+        .getByRole("heading", { name: "Dashboard gerencial", exact: true })
+        .waitFor();
+      await dialog.waitFor({ state: "hidden" });
+      await page
+        .getByRole("button", { name: "Abrir navegação", exact: true })
+        .click();
+      await page.keyboard.press("Escape");
+      await dialog.waitFor({ state: "hidden" });
+      assert.equal(
+        await page
+          .getByRole("button", { name: "Abrir navegação", exact: true })
+          .evaluate((el) => el === document.activeElement),
+        true,
+      );
+    }
     assert.deepEqual(errors, []);
     await ctx.close();
   }
@@ -429,8 +606,11 @@ try {
         routes,
         syntheticApiRequests: requests.length,
         mutations: 0,
-        screenshots: "work/stage-03b",
-        flow: "list → search/filters → profile/history → create/errors → edit → reload discards",
+        screenshots: {
+          people: "work/stage-03b",
+          navigation: "work/navigation-review",
+        },
+        flow: "People regression + 9 module links + role guards + collapsed/mobile navigation",
       },
       null,
       2,
