@@ -8,7 +8,7 @@ Alias criado em 23/11/2026, apontando ao deployment `dpl_XVq8ymVZTvZXP6dmyhsRN3S
 
 Implementada em `.github/workflows/approve-preview.yml` e `scripts/preview/approve.py`, mas **ainda não ativada**. Duas dependências:
 
-1. O GitHub exige o arquivo do workflow na branch padrão (`main`) para mostrar o botão Run workflow. Esta entrega fica em `chore/youcon-fixed-preview`; não há merge nem mudança de main. A integração em main precisa ser planejada separadamente para não disparar produção. Não basta trocar a branch no botão do GitHub.
+1. O GitHub exige o arquivo do workflow na branch padrão (`main`) para mostrar o botão Run workflow. Esta entrega fica em `chore/youcon-preview-automation`; não há merge nem mudança de main. A integração em main precisa ser planejada separadamente para não disparar produção. Não basta trocar a branch no botão do GitHub.
 2. Um administrador deve configurar `YOUCON_PREVIEW_VERCEL_TOKEN` nos secrets do GitHub Actions, diretamente no GitHub, com o menor escopo disponível para consultar este projeto e atribuir aliases na equipe autorizada. Não colar credenciais na conversa. Não há token Vercel disponível no ambiente e o conector não administra secrets do GitHub.
 
 A tentativa de ampliar o acesso de rede local para verificar o login anonimamente não foi concluída; a política permaneceu inalterada. A atribuição do alias e a proteção configurada foram confirmadas pela API Vercel, mas a checagem HTTP sem sessão do novo hostname ainda exige verificação. O workflow recusa mudanças caso não receba HTTP 401 da proteção Vercel tanto do candidato quanto do alias. Isso não substitui uma validação funcional do login da plataforma com a conta do usuário.
