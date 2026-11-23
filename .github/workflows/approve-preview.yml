@@ -1,0 +1,38 @@
+name: Aprovar Preview YouCon People
+run-name: Preview aprovada por @${{ github.actor }} — ${{ inputs.commit_sha }}
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_id:
+        description: ID do deployment Vercel (dpl_...), já testado
+        required: true
+        type: string
+      commit_sha:
+        description: SHA completo (40 caracteres) aprovado para testes
+        required: true
+        type: string
+      approve:
+        description: Aprovo esta versão para o link fixo de testes
+        required: true
+        default: false
+        type: boolean
+permissions:
+  contents: read
+concurrency:
+  group: youcon-fixed-preview
+  cancel-in-progress: false
+jobs:
+  approve:
+    if: inputs.approve && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Validar e atualizar somente o alias de Preview
+        env:
+          VERCEL_TOKEN: ${{ secrets.YOUCON_PREVIEW_VERCEL_TOKEN }}
+          APPROVED_DEPLOYMENT: ${{ inputs.deployment_id }}
+          APPROVED_SHA: ${{ inputs.commit_sha }}
+        run: python3 scripts/preview/approve.py
