@@ -3,7 +3,7 @@
  * For optimized builds, use the loopback env below while building, then RUN_BUILT_APP=1.
  * Run: node tests/browser/people.mjs (Chromium: /usr/bin/chromium, override CHROMIUM_PATH).
  */
-import { createServer } from "node:http";
+import { createServer, get } from "node:http";
 import { spawn } from "node:child_process";
 import { createWriteStream } from "node:fs";
 import { mkdir } from "node:fs/promises";
@@ -115,7 +115,20 @@ let browser;
 try {
   for (let i = 0; i < 120; i++) {
     try {
-      if ((await fetch(`${base}/login`)).ok) break;
+      if (
+        await new Promise((resolve) => {
+          const req = get(`${base}/login`, (res) => {
+            res.resume();
+            resolve(res.statusCode === 200);
+          });
+          req.on("error", () => resolve(false));
+          req.setTimeout(3000, () => {
+            req.destroy();
+            resolve(false);
+          });
+        })
+      )
+        break;
     } catch {}
     if (next.exitCode !== null) throw new Error("Next exited before ready");
     await new Promise((resolve) => setTimeout(resolve, 500));
@@ -163,9 +176,32 @@ try {
   for (const role of ["professional", "leadership"]) {
     const ctx = await contextFor(role),
       page = await ctx.newPage();
-    for (const route of routes) {
+    for (const route of routes.filter(
+      (r) => !["/compliance", "/politicas-internas"].includes(r),
+    )) {
       await page.goto(`${base}${route}`);
       await page.waitForURL(/\/acesso-negado$/);
+    }
+    for (const lib of ["compliance", "politicas-internas"]) {
+      await page.goto(`${base}/${lib}`);
+      await page
+        .getByRole("heading", {
+          name: lib === "compliance" ? "Compliance" : "Políticas Internas",
+          exact: true,
+        })
+        .waitFor();
+      assert.equal(
+        await page
+          .getByRole("link", { name: "Criar documento", exact: true })
+          .count(),
+        0,
+      );
+      await page.goto(`${base}/${lib}/${lib}-5`);
+      await page
+        .getByRole("heading", { name: "Documento indisponível" })
+        .waitFor();
+      await page.goto(`${base}/${lib}/novo`);
+      await page.waitForURL(/acesso-negado$/);
     }
     await ctx.close();
   }
@@ -452,7 +488,8 @@ try {
     for (const [slug, label] of navigationPages) {
       await nav.getByRole("link", { name: label, exact: true }).click();
       await page.getByRole("heading", { name: label, exact: true }).waitFor();
-      await page.getByText("Em preparação", { exact: true }).waitFor();
+      if (!["compliance", "politicas-internas"].includes(slug))
+        await page.getByText("Em preparação", { exact: true }).waitFor();
       assert.equal(new URL(page.url()).pathname, `/${slug}`);
       assert.equal(await nav.locator('a[aria-current="page"]').count(), 1);
       assert.equal(
@@ -594,6 +631,173 @@ try {
         true,
       );
     }
+    await page.setViewportSize({ width: 1440, height: 1100 });
+    await page.goto(`${base}/politicas-internas`);
+    await page
+      .getByRole("heading", { name: "Políticas Internas", exact: true })
+      .waitFor();
+    await page.getByLabel("Pesquisar documento").fill("Trabalho remoto");
+    await page.getByText("1 documentos encontrados", { exact: true }).waitFor();
+    await page
+      .getByRole("button", { name: "Limpar filtros", exact: true })
+      .click();
+    await page
+      .getByRole("combobox", { name: /^Status/ })
+      .selectOption("Rascunho");
+    await page.getByText("1 documentos encontrados", { exact: true }).waitFor();
+    await page
+      .getByRole("button", { name: "Limpar filtros", exact: true })
+      .click();
+    await page.getByRole("button", { name: "Visualizar em cards" }).click();
+    if (role === "director") {
+      await mkdir("work/documents-review", { recursive: true });
+      await page.evaluate(() => {
+        document.activeElement?.blur();
+        window.scrollTo(0, 0);
+      });
+      await page.screenshot({
+        path: "work/documents-review/cards.png",
+        fullPage: true,
+        animations: "disabled",
+      });
+    }
+    await page
+      .getByRole("link", { name: "Criar documento", exact: true })
+      .click();
+    await page
+      .getByLabel("Título", { exact: true })
+      .fill("Manual fictício de teste");
+    await page.getByLabel("Adicionar anexos").setInputFiles({
+      name: "exemplo.pdf",
+      mimeType: "application/pdf",
+      buffer: Buffer.from("%PDF-1.4 demo"),
+    });
+    await page
+      .getByLabel("Conteúdo", { exact: true })
+      .fill("Texto fictício editado no navegador.");
+    for (const [label, text] of [
+      ["Título", "Orientações de teste"],
+      ["Lista", "Primeira orientação\nSegunda orientação"],
+      ["Tabela", "Item|Responsável\nTeste|RH"],
+      ["Link", "Link de exemplo"],
+    ]) {
+      await page
+        .getByRole("button", { name: `+ ${label}`, exact: true })
+        .click();
+      await page.getByLabel("Conteúdo", { exact: true }).last().fill(text);
+    }
+    await page
+      .getByLabel("Endereço do link", { exact: true })
+      .fill("https://example.com");
+    await page.getByRole("button", { name: "+ Imagem", exact: true }).click();
+    await page.getByLabel("Selecionar imagem", { exact: true }).setInputFiles({
+      name: "imagem-ficticia.png",
+      mimeType: "image/png",
+      buffer: Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j4uoAAAAASUVORK5CYII=",
+        "base64",
+      ),
+    });
+    await page
+      .getByLabel("Descrição da imagem", { exact: true })
+      .fill("Imagem fictícia de teste");
+    await page
+      .getByRole("button", { name: "Pré-visualizar conteúdo", exact: true })
+      .click();
+    await page
+      .getByRole("heading", { name: "Orientações de teste", exact: true })
+      .waitFor();
+    await page.getByRole("cell", { name: "RH", exact: true }).waitFor();
+    await page
+      .getByRole("button", { name: "Voltar ao editor", exact: true })
+      .click();
+    await page.getByLabel("Status", { exact: true }).selectOption("Ativa");
+    await page
+      .getByRole("button", { name: "Simular publicação", exact: true })
+      .click();
+    await page
+      .getByRole("heading", { name: "Manual fictício de teste", exact: true })
+      .waitFor();
+    await page.getByText("exemplo.pdf", { exact: true }).waitFor();
+    await page
+      .getByRole("button", { name: "Editar documento", exact: true })
+      .click();
+    await page
+      .getByLabel("Título", { exact: true })
+      .fill("Manual fictício revisado");
+    await page
+      .getByRole("button", { name: "Salvar simulação", exact: true })
+      .click();
+    await page
+      .getByText("Existe uma versão publicada anterior.", { exact: false })
+      .waitFor();
+    await page
+      .getByRole("button", { name: "Histórico de versões (2)", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Visualizar versão 1", exact: true })
+      .click();
+    await page
+      .getByRole("heading", { name: "Manual fictício de teste", exact: true })
+      .waitFor();
+    await page
+      .getByRole("button", { name: "Voltar à atual", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Duplicar documento", exact: true })
+      .click();
+    page.once("dialog", (dialog) => dialog.accept());
+    await page
+      .getByRole("button", { name: "Arquivar documento", exact: true })
+      .click();
+    await page.getByRole("link", { name: "Voltar à biblioteca" }).click();
+    await page
+      .getByRole("link", {
+        name: "Manual fictício revisado · cópia",
+        exact: true,
+      })
+      .waitFor();
+    if (role === "director") {
+      await mkdir("work/documents-review", { recursive: true });
+      await page.screenshot({
+        path: "work/documents-review/library.png",
+        fullPage: true,
+        animations: "disabled",
+      });
+      await page
+        .getByRole("link", {
+          name: "Trabalho remoto e colaboração",
+          exact: true,
+        })
+        .click();
+      await page
+        .getByRole("button", { name: "Confirmar leitura", exact: true })
+        .click();
+      await page
+        .getByRole("button", { name: "Leitura confirmada", exact: true })
+        .waitFor();
+      await page.evaluate(() => {
+        document.activeElement?.blur();
+        window.scrollTo(0, 0);
+      });
+      await page.screenshot({
+        path: "work/documents-review/document.png",
+        fullPage: true,
+        animations: "disabled",
+      });
+      await page.setViewportSize({ width: 390, height: 900 });
+      assert.equal(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+        true,
+      );
+      await page.screenshot({
+        path: "work/documents-review/mobile.png",
+        fullPage: true,
+        animations: "disabled",
+      });
+    }
     assert.deepEqual(errors, []);
     await ctx.close();
   }
@@ -610,8 +814,9 @@ try {
         screenshots: {
           people: "work/stage-03b",
           navigation: "work/navigation-review",
+          documents: "work/documents-review",
         },
-        flow: "People regression + 10 module links + role guards + collapsed/mobile navigation",
+        flow: "People and navigation regression + document filters/cards/blocks/attachments/publication/history/duplicate/archive/reading + role and audience guards",
       },
       null,
       2,

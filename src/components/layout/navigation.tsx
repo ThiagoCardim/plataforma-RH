@@ -22,29 +22,43 @@ export function Navigation({
       links: [{ href: "/home", label: "Início", icon: "home" }],
     },
     ...(management
-      ? ["Pessoas", "Desempenho", "Políticas"].map(
-          (title) => ({
-            title,
-            links: [
-              ...(title === "Pessoas"
-                ? [
-                    {
-                      href: "/gente-gestao",
-                      label: "Colaboradores",
-                      icon: "people" as const,
-                    },
-                  ]
-                : []),
-              ...moduleEntries
-                .filter(([, module]) => module.group === title)
-                .map(([id, module]) => ({
-                  href: `/${id}`,
-                  label: module.label,
-                  icon: module.icon,
-                })),
-            ],
-          }),
-        )
+      ? ["Pessoas", "Desempenho", "Políticas"].map((title) => ({
+          title,
+          links: [
+            ...(title === "Pessoas"
+              ? [
+                  {
+                    href: "/gente-gestao",
+                    label: "Colaboradores",
+                    icon: "people" as const,
+                  },
+                ]
+              : []),
+            ...moduleEntries
+              .filter(([, module]) => module.group === title)
+              .map(([id, module]) => ({
+                href: `/${id}`,
+                label: module.label,
+                icon: module.icon,
+              })),
+          ],
+        }))
+      : []),
+    ...(!management
+      ? [
+          {
+            title: "Políticas",
+            links: moduleEntries
+              .filter(
+                ([id]) => id === "compliance" || id === "politicas-internas",
+              )
+              .map(([id, entry]) => ({
+                href: `/${id}`,
+                label: entry.label,
+                icon: entry.icon,
+              })),
+          },
+        ]
       : []),
     ...(dashboard
       ? [

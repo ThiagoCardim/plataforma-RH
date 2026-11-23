@@ -79,6 +79,8 @@ export const moduleEntries = Object.entries(upcomingModules) as [
 export function isNavigationActive(pathname: string, href: string) {
   return (
     pathname === href ||
+    ((href === "/compliance" || href === "/politicas-internas") &&
+      pathname.startsWith(href + "/")) ||
     (href === "/gente-gestao" && pathname.startsWith("/gente-gestao/pessoas"))
   );
 }
@@ -91,6 +93,14 @@ export function routeLabel(pathname: string) {
     if (pathname.endsWith("/editar")) return "Editar pessoa";
     return "Ficha da pessoa";
   }
+  if (pathname.startsWith("/compliance/"))
+    return pathname.endsWith("/novo")
+      ? "Novo documento"
+      : "Documento de Compliance";
+  if (pathname.startsWith("/politicas-internas/"))
+    return pathname.endsWith("/novo")
+      ? "Novo documento"
+      : "Políticas Internas · Documento";
   return (
     moduleEntries.find(([id]) => pathname === `/${id}`)?.[1].label ?? "Início"
   );
