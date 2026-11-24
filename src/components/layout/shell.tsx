@@ -28,6 +28,7 @@ export function Shell({
   const name = personalName(access.displayName);
   const navigation = (
     <Navigation
+      operational={access.roles.includes("leadership")}
       management={hasPermission(access.permissions, "people.management.view")}
       dashboard={hasPermission(access.permissions, "people.dashboard.view")}
     />

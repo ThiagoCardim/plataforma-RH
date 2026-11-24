@@ -197,10 +197,16 @@ export function StageContents({
 }
 export function StageEditor({
   initial,
+  offboarding = false,
+  operationalOnly = false,
+  administrativeOnly = false,
   save,
   cancel,
 }: {
   initial: Stage;
+  offboarding?: boolean;
+  operationalOnly?: boolean;
+  administrativeOnly?: boolean;
   save: (s: Stage) => void;
   cancel: () => void;
 }) {
@@ -265,7 +271,14 @@ export function StageEditor({
               set({ ...stage, owner: e.target.value as Stage["owner"] })
             }
           >
-            {["RH", "Liderança", "Profissional"].map((v) => (
+            {(administrativeOnly
+              ? ["RH"]
+              : operationalOnly
+                ? ["Liderança"]
+                : offboarding
+                  ? ["RH", "Liderança"]
+                  : ["RH", "Liderança", "Profissional"]
+            ).map((v) => (
               <option key={v}>{v}</option>
             ))}
           </Select>
@@ -284,10 +297,13 @@ export function StageEditor({
         <label className="flex items-center gap-2 text-xs">
           <input
             type="checkbox"
-            checked={stage.public}
+            disabled={offboarding}
+            checked={!offboarding && stage.public}
             onChange={(e) => set({ ...stage, public: e.target.checked })}
           />
-          Autorizar profissional a acessar
+          {offboarding
+            ? "Conteúdo interno demonstrativo"
+            : "Autorizar profissional a acessar"}
         </label>
       </div>
       <section className="rounded-xl border bg-card p-4">
@@ -510,7 +526,15 @@ export function StageEditor({
               );
               return;
             }
-            save(stage);
+            save({
+              ...stage,
+              owner: administrativeOnly
+                ? "RH"
+                : operationalOnly
+                  ? "Liderança"
+                  : stage.owner,
+              public: offboarding ? false : stage.public,
+            });
           }}
         >
           Salvar etapa

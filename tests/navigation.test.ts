@@ -42,10 +42,32 @@ describe("navigation preserves access and existing destinations", () => {
     expect(html).not.toContain("Colaboradores");
     for (const [id] of moduleEntries.filter(
       ([id]) =>
-        id !== "politicas-compliance" && id !== "onboarding-offboarding",
+        id !== "politicas-compliance" &&
+        id !== "onboarding-offboarding" &&
+        id !== "offboarding",
     ))
       expect(html).not.toContain(`href="/${id}"`);
     expect(html).not.toContain("Dashboard Gerencial");
+  });
+  it("places Offboarding directly after Onboarding and limits its link to managers/leaders", () => {
+    const manager = renderToStaticMarkup(
+      createElement(Navigation, { management: true, dashboard: false }),
+    );
+    expect(manager.indexOf('href="/onboarding-offboarding"')).toBeLessThan(
+      manager.indexOf('href="/offboarding"'),
+    );
+    const leader = renderToStaticMarkup(
+      createElement(Navigation, {
+        management: false,
+        dashboard: false,
+        operational: true,
+      }),
+    );
+    expect(leader).toContain('href="/offboarding"');
+    const professional = renderToStaticMarkup(
+      createElement(Navigation, { management: false, dashboard: false }),
+    );
+    expect(professional).not.toContain('href="/offboarding"');
   });
   it("keeps dashboard access independent of management access", () => {
     const html = renderToStaticMarkup(
@@ -70,7 +92,10 @@ describe("navigation preserves access and existing destinations", () => {
 });
 describe("every initial module has a server guard", () => {
   for (const [id, entry] of moduleEntries.filter(
-    ([id]) => id !== "politicas-compliance" && id !== "onboarding-offboarding",
+    ([id]) =>
+      id !== "politicas-compliance" &&
+      id !== "onboarding-offboarding" &&
+      id !== "offboarding",
   )) {
     it(`blocks unauthorized direct access to ${entry.label}`, async () => {
       guard.mockRejectedValue(new Error("denied"));

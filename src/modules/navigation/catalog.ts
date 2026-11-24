@@ -7,6 +7,13 @@ export const upcomingModules = {
     description:
       "Um espaço para acompanhar a chegada e o encerramento de cada trajetória na organização.",
   },
+  offboarding: {
+    label: "Offboarding",
+    group: "Pessoas",
+    icon: "journey",
+    description:
+      "Encerramentos organizados e transferência de conhecimento, em demonstração local.",
+  },
   "plano-de-carreira": {
     label: "Plano de Carreira",
     group: "Pessoas",

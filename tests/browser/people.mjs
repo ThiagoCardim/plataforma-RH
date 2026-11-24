@@ -15,6 +15,7 @@ const base = `http://127.0.0.1:${port}`;
 await mkdir("work/stage-03b", { recursive: true });
 const navigationPages = [
   ["onboarding-offboarding", "Onboarding"],
+  ["offboarding", "Offboarding"],
   ["plano-de-carreira", "Plano de Carreira"],
   ["home-office", "Home Office"],
   ["avaliacao-de-desempenho", "Avaliação de Desempenho"],
@@ -176,7 +177,12 @@ try {
     const ctx = await contextFor(role),
       page = await ctx.newPage();
     for (const route of routes.filter(
-      (r) => !["/politicas-compliance", "/onboarding-offboarding"].includes(r),
+      (r) =>
+        ![
+          "/politicas-compliance",
+          "/onboarding-offboarding",
+          ...(role === "leadership" ? ["/offboarding"] : []),
+        ].includes(r),
     )) {
       await page.goto(`${base}${route}`);
       await page.waitForURL(/\/acesso-negado$/);
@@ -477,7 +483,7 @@ try {
     const nav = page
       .locator(".desktop-sidebar")
       .getByRole("navigation", { name: "Navegação principal", exact: true });
-    assert.equal(await nav.getByRole("link").count(), 12);
+    assert.equal(await nav.getByRole("link").count(), 13);
     assert.equal(
       await nav
         .getByRole("link", { name: "Gente & Gestão", exact: true })
@@ -487,7 +493,13 @@ try {
     for (const [slug, label] of navigationPages) {
       await nav.getByRole("link", { name: label, exact: true }).click();
       await page.getByRole("heading", { name: label, exact: true }).waitFor();
-      if (!["politicas-compliance", "onboarding-offboarding"].includes(slug))
+      if (
+        ![
+          "politicas-compliance",
+          "onboarding-offboarding",
+          "offboarding",
+        ].includes(slug)
+      )
         await page.getByText("Em preparação", { exact: true }).waitFor();
       assert.equal(new URL(page.url()).pathname, `/${slug}`);
       assert.equal(await nav.locator('a[aria-current="page"]').count(), 1);

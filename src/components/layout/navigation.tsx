@@ -11,9 +11,11 @@ type Item = { href: string; label: string; icon: keyof typeof navigationIcons };
 export function Navigation({
   management,
   dashboard,
+  operational = false,
 }: {
   management: boolean;
   dashboard: boolean;
+  operational?: boolean;
 }) {
   const pathname = usePathname();
   const groups: { title: string; links: Item[]; separated?: boolean }[] = [
@@ -54,6 +56,15 @@ export function Navigation({
                 label: "Onboarding",
                 icon: "journey" as const,
               },
+              ...(operational
+                ? [
+                    {
+                      href: "/offboarding",
+                      label: "Offboarding",
+                      icon: "journey" as const,
+                    },
+                  ]
+                : []),
             ],
           },
           {

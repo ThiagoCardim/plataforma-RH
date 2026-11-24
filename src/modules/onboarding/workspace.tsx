@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { useLocalDemo } from "@/modules/local-demo/use-local-demo";
 import {
   type State,
+  type Termination,
   type Scope,
   type Process,
   type Template,
@@ -40,7 +41,7 @@ import {
   jobs,
 } from "./model";
 import { Modal, Meter, StageEditor, StageContents } from "./components";
-const tracks = [
+const onboardingTracks = [
   ["institutional", "Trilha institucional", "RH"],
   ["technical", "Trilha técnica", "Liderança"],
 ] as const;
@@ -60,6 +61,24 @@ export function OnboardingWorkspace({
   initial: State;
   scope: Scope;
 }) {
+  const offboarding = scope.journey === "offboarding";
+  const title = offboarding ? "Offboarding" : "Onboarding";
+  const listTab = offboarding ? "Offboardings" : "Onboardings";
+  const modelTab = offboarding
+    ? "Modelos de Offboarding"
+    : "Modelos de Onboarding";
+  const tracks = (
+    offboarding
+      ? ([
+          ["institutional", "Trilha RH", "RH"],
+          ["technical", "Trilha operacional", "Liderança"],
+        ] as const)
+      : onboardingTracks
+  ).filter(
+    ([kind]) => !offboarding || scope.mode === "rh" || kind === "technical",
+  );
+  const firstTrack =
+    offboarding && scope.mode !== "rh" ? "technical" : "institutional";
   const {
     value: state,
     setValue: set,
@@ -71,9 +90,7 @@ export function OnboardingWorkspace({
   const [sector, setSector] = useState("");
   const [contract, setContract] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
-  const [track, setTrack] = useState<"institutional" | "technical">(
-    "institutional",
-  );
+  const [track, setTrack] = useState<"institutional" | "technical">(firstTrack);
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [editing, setEditing] = useState<{
     stage: Stage;
@@ -105,18 +122,29 @@ export function OnboardingWorkspace({
       .flatMap((s) => s.tasks)
       .filter((t) => t.required && !t.done).length;
   const late = active.filter((p) => allStages(p).some((s) => overdue(p, s)));
-  function update(fn: (s: State) => State, text: string, id?: string) {
+  function update(
+    fn: (s: State) => State,
+    text: string,
+    id?: string,
+    eventTrack?: Template["track"],
+  ) {
     const event = {
       id: crypto.randomUUID(),
       at: new Date().toISOString(),
       actor: scope.name,
       text,
       process: id,
+      track: eventTrack,
     };
     set((s) => ({ ...fn(s), events: [event, ...s.events] }));
     setNotice(text);
   }
-  function updateProcess(p: Process, patch: Partial<Process>, text: string) {
+  function updateProcess(
+    p: Process,
+    patch: Partial<Process>,
+    text: string,
+    eventTrack?: Template["track"],
+  ) {
     update(
       (s) => ({
         ...s,
@@ -126,6 +154,7 @@ export function OnboardingWorkspace({
       }),
       text,
       p.id,
+      eventTrack,
     );
   }
   function move(id: string, column: string) {
@@ -153,6 +182,14 @@ export function OnboardingWorkspace({
   ) {
     const old = p[kind].find((s) => s.id === stage.id);
     if (
+      offboarding &&
+      !rh &&
+      (old?.owner !== "Liderança" ||
+        stage.owner !== "Liderança" ||
+        kind !== "technical")
+    )
+      return;
+    if (
       !old ||
       !(completion
         ? canComplete(scope, p, kind, old)
@@ -162,7 +199,8 @@ export function OnboardingWorkspace({
     updateProcess(
       p,
       { [kind]: p[kind].map((s) => (s.id === stage.id ? stage : s)) },
-      `${completion ? "Atividades atualizadas" : "Etapa editada"}: ${stage.name} · ${kind === "technical" ? "trilha técnica" : "trilha institucional"}.`,
+      `${completion ? "Atividades atualizadas" : "Etapa editada"}: ${stage.name} · ${kind === "technical" ? (offboarding ? "trilha operacional" : "trilha técnica") : offboarding ? "trilha RH" : "trilha institucional"}.`,
+      kind,
     );
   }
   function saveTemplate(t: Template, text: string) {
@@ -186,7 +224,10 @@ export function OnboardingWorkspace({
   function createTemplate() {
     const t: Template = {
       id: crypto.randomUUID(),
-      name: "Novo modelo de onboarding",
+      name: offboarding
+        ? "Novo modelo de offboarding"
+        : "Novo modelo de onboarding",
+      termination: offboarding ? "Voluntário" : undefined,
       track: rh ? "institutional" : "technical",
       contract: "CLT",
       sector: "Todos",
@@ -194,7 +235,12 @@ export function OnboardingWorkspace({
       leader: scope.user,
       status: "Rascunho",
       version: 1,
-      stages: [newStage()],
+      stages: [
+        {
+          ...newStage(offboarding),
+          ...(offboarding && rh ? { owner: "RH" as const } : {}),
+        },
+      ],
     };
     saveTemplate(t, "Modelo demonstrativo criado.");
     setTemplateId(t.id);
@@ -202,6 +248,14 @@ export function OnboardingWorkspace({
   if (!ready) return <p role="status">Carregando sua demonstração local…</p>;
   return (
     <div className="relative w-full min-w-0 max-w-full space-y-6 overflow-x-clip">
+      {offboarding && (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-amber-900">
+          <strong>Simulação de Offboarding.</strong> Nenhum desligamento,
+          rescisão ou revogação de acesso é executado. RH e liderança possuem
+          trilhas separadas; apenas etapas operacionais atribuídas são
+          disponibilizadas à liderança.
+        </p>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-orange-200 bg-accent p-4 text-xs leading-5 text-accent-foreground">
         <div>
           <strong>Ambiente demonstrativo · dados fictícios</strong>
@@ -247,11 +301,15 @@ export function OnboardingWorkspace({
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="section-kicker mb-3">
-            Pessoas / Jornadas de integração
+            {offboarding
+              ? "Pessoas / Encerramentos e continuidade"
+              : "Pessoas / Jornadas de integração"}
           </p>
-          <h1 className="page-title">Onboarding</h1>
+          <h1 className="page-title">{title}</h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            Uma chegada acolhedora. Uma jornada com direção.
+            {offboarding
+              ? "Encerramentos organizados. Continuidade com cuidado."
+              : "Uma chegada acolhedora. Uma jornada com direção."}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -264,21 +322,16 @@ export function OnboardingWorkspace({
           {rh && (
             <Button onClick={() => setCreating(true)}>
               <Plus />
-              Novo onboarding
+              {offboarding ? "Novo offboarding" : "Novo onboarding"}
             </Button>
           )}
         </div>
       </header>
       <nav
-        aria-label="Abas do onboarding"
+        aria-label={`Abas do ${title.toLowerCase()}`}
         className="flex gap-1 overflow-x-auto border-b pb-2"
       >
-        {[
-          "Visão Geral",
-          "Onboardings",
-          "Modelos de Onboarding",
-          "Histórico",
-        ].map((t) => (
+        {["Visão Geral", listTab, modelTab, "Histórico"].map((t) => (
           <Button
             key={t}
             variant={tab === t ? "secondary" : "ghost"}
@@ -292,7 +345,7 @@ export function OnboardingWorkspace({
       <p className="text-xs text-emerald-800" role="status">
         {notice}
       </p>
-      {(tab === "Visão Geral" || tab === "Onboardings") && (
+      {(tab === "Visão Geral" || tab === listTab) && (
         <div className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-3">
           <label className="relative text-xs">
             Buscar profissional
@@ -398,19 +451,23 @@ export function OnboardingWorkspace({
                 Duas trilhas, uma jornada
               </p>
               <h2 className="text-2xl font-semibold tracking-tight">
-                Conexão com a cultura.
+                {offboarding
+                  ? "Continuidade dos projetos."
+                  : "Conexão com a cultura."}
                 <br />
-                Confiança para começar.
+                {offboarding
+                  ? "Cuidado em cada encerramento."
+                  : "Confiança para começar."}
               </h2>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                A trilha institucional aproxima as pessoas da YouCon. A trilha
-                técnica conecta cada profissional às ferramentas, às entregas e
-                à sua equipe.
+                {offboarding
+                  ? "RH acompanha as pendências administrativas e contratuais. A liderança cuida da transferência de conhecimento, dos projetos e dos equipamentos. Tudo aqui é apenas uma simulação local."
+                  : "A trilha institucional aproxima as pessoas da YouCon. A trilha técnica conecta cada profissional às ferramentas, às entregas e à sua equipe."}
               </p>
               <Button
                 className="mt-5"
                 variant="outline"
-                onClick={() => setTab("Onboardings")}
+                onClick={() => setTab(listTab)}
               >
                 Explorar jornadas
                 <ArrowRight />
@@ -437,7 +494,7 @@ export function OnboardingWorkspace({
                       key={p.id}
                       onClick={() => {
                         setSelected(p.id);
-                        setTrack("institutional");
+                        setTrack(firstTrack);
                       }}
                     >
                       <Avatar name={p.name} />
@@ -462,7 +519,7 @@ export function OnboardingWorkspace({
           </div>
         </>
       )}
-      {tab === "Onboardings" && (
+      {tab === listTab && (
         <>
           <div className="flex flex-wrap justify-between gap-2 text-xs text-muted-foreground">
             <p>
@@ -538,7 +595,7 @@ export function OnboardingWorkspace({
                         <button
                           onClick={() => {
                             setSelected(p.id);
-                            setTrack("institutional");
+                            setTrack(firstTrack);
                           }}
                           className="mb-4 flex w-full items-center gap-3 text-left"
                         >
@@ -615,13 +672,15 @@ export function OnboardingWorkspace({
           </div>
         </>
       )}
-      {tab === "Modelos de Onboarding" && (
+      {tab === modelTab && (
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="section-title">Biblioteca de modelos</h2>
               <p className="mt-2 text-xs text-muted-foreground">
-                Institucionais por vínculo. Técnicos por setor, cargo e vínculo.
+                {offboarding
+                  ? "Modelos RH e operacionais por setor, vínculo e tipo de desligamento."
+                  : "Institucionais por vínculo. Técnicos por setor, cargo e vínculo."}
                 Apenas versões aprovadas são combinadas.
               </p>
             </div>
@@ -652,13 +711,18 @@ export function OnboardingWorkspace({
                   </div>
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
                     {t.track === "technical"
-                      ? "Trilha técnica"
-                      : "Trilha institucional"}{" "}
+                      ? offboarding
+                        ? "Trilha operacional"
+                        : "Trilha técnica"
+                      : offboarding
+                        ? "Trilha RH"
+                        : "Trilha institucional"}{" "}
                     · v{t.version}
                   </p>
                   <h3 className="mt-2 text-base font-semibold">{t.name}</h3>
                   <p className="mt-3 text-xs text-muted-foreground">
                     {t.contract} · {t.sector} · {t.job}
+                    {t.termination && ` · ${t.termination}`}
                   </p>
                   <p className="mt-5 border-t pt-3 text-xs">
                     {t.stages.length} etapas{" "}
@@ -736,6 +800,7 @@ export function OnboardingWorkspace({
                 <h3 className="text-xl font-semibold">{process.name}</h3>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {process.contract} · {process.sector} · {process.job}
+                  {process.termination && ` · ${process.termination}`}
                 </p>
                 <p className="mt-2 text-xs text-muted-foreground">
                   Início {dates(process.start)} · {process.duration} dias ·{" "}
@@ -767,8 +832,9 @@ export function OnboardingWorkspace({
                 />
               </label>
               <p className="self-center text-xs leading-5 text-muted-foreground">
-                CLT: padrão 90 dias · Estágio: padrão 60 dias · PJ: duração
-                combinada. Os prazos das etapas são contados a partir do início.
+                {offboarding
+                  ? "Prazos demonstrativos e personalizáveis; não são orientação legal ou contratual. Marcar tarefas não desliga pessoas, não cancela contratos e não revoga acessos."
+                  : "CLT: padrão 90 dias · Estágio: padrão 60 dias · PJ: duração combinada. Os prazos das etapas são contados a partir do início."}
               </p>
             </div>
           )}
@@ -797,6 +863,11 @@ export function OnboardingWorkspace({
           </div>
           {editing?.process === process.id ? (
             <StageEditor
+              offboarding={offboarding}
+              operationalOnly={offboarding && !rh}
+              administrativeOnly={
+                offboarding && editing.track === "institutional"
+              }
               key={editing.stage.id}
               initial={editing.stage}
               cancel={() => setEditing(null)}
@@ -912,7 +983,9 @@ export function OnboardingWorkspace({
                   <Button
                     variant="outline"
                     onClick={() => {
-                      const s = newStage();
+                      const s = newStage(offboarding);
+                      if (offboarding && track === "institutional")
+                        s.owner = "RH";
                       updateProcess(
                         process,
                         { [track]: [...process[track], s] },
@@ -974,6 +1047,11 @@ export function OnboardingWorkspace({
         >
           {editing?.template === template.id ? (
             <StageEditor
+              offboarding={offboarding}
+              operationalOnly={offboarding && !rh}
+              administrativeOnly={
+                offboarding && editing.track === "institutional"
+              }
               key={editing.stage.id}
               initial={editing.stage}
               cancel={() => setEditing(null)}
@@ -995,8 +1073,11 @@ export function OnboardingWorkspace({
           ) : (
             <div className="space-y-5">
               <p className="rounded-xl bg-accent p-4 text-xs leading-5">
-                Modelos técnicos precisam de aprovação do RH. Alterações criam
-                uma nova revisão e não modificam processos em andamento.
+                {offboarding
+                  ? "Modelos operacionais precisam de aprovação do RH."
+                  : "Modelos técnicos precisam de aprovação do RH."}{" "}
+                Alterações criam uma nova revisão e não modificam processos em
+                andamento.
               </p>
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="text-xs sm:col-span-2">
@@ -1033,8 +1114,12 @@ export function OnboardingWorkspace({
                       )
                     }
                   >
-                    <option value="institutional">Institucional</option>
-                    <option value="technical">Técnica</option>
+                    <option value="institutional">
+                      {offboarding ? "RH" : "Institucional"}
+                    </option>
+                    <option value="technical">
+                      {offboarding ? "Operacional" : "Técnica"}
+                    </option>
                   </Select>
                 </label>
                 <label className="text-xs">
@@ -1062,7 +1147,9 @@ export function OnboardingWorkspace({
                   Setor
                   <Select
                     aria-label="Setor do modelo"
-                    disabled={template.track === "institutional"}
+                    disabled={
+                      !offboarding && template.track === "institutional"
+                    }
                     value={template.sector}
                     onChange={(e) =>
                       saveTemplate(
@@ -1084,7 +1171,9 @@ export function OnboardingWorkspace({
                   Cargo
                   <Select
                     aria-label="Cargo do modelo"
-                    disabled={template.track === "institutional"}
+                    disabled={
+                      !offboarding && template.track === "institutional"
+                    }
                     value={template.job}
                     onChange={(e) =>
                       saveTemplate(
@@ -1103,6 +1192,28 @@ export function OnboardingWorkspace({
                   </Select>
                 </label>
               </div>
+              {offboarding && (
+                <label className="block text-xs">
+                  Tipo de desligamento
+                  <Select
+                    aria-label="Tipo de desligamento do modelo"
+                    value={template.termination ?? "Voluntário"}
+                    onChange={(e) =>
+                      saveTemplate(
+                        {
+                          ...template,
+                          termination: e.target.value as Termination,
+                          status: "Rascunho",
+                        },
+                        "Tipo de desligamento do modelo atualizado.",
+                      )
+                    }
+                  >
+                    <option>Voluntário</option>
+                    <option>Involuntário</option>
+                  </Select>
+                </label>
+              )}
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h3 className="font-semibold">Etapas do modelo</h3>
                 <Badge>
@@ -1182,7 +1293,15 @@ export function OnboardingWorkspace({
                   saveTemplate(
                     {
                       ...template,
-                      stages: [...template.stages, newStage()],
+                      stages: [
+                        ...template.stages,
+                        {
+                          ...newStage(offboarding),
+                          ...(offboarding && template.track === "institutional"
+                            ? { owner: "RH" as const }
+                            : {}),
+                        },
+                      ],
                       status: "Em revisão",
                       version: template.version + 1,
                     },
@@ -1246,7 +1365,10 @@ export function OnboardingWorkspace({
         </Modal>
       )}
       {creating && (
-        <Modal title="Novo onboarding" close={() => setCreating(false)}>
+        <Modal
+          title={offboarding ? "Novo offboarding" : "Novo onboarding"}
+          close={() => setCreating(false)}
+        >
           <NewProcess
             state={state}
             scope={scope}
@@ -1258,7 +1380,7 @@ export function OnboardingWorkspace({
                 p.id,
               );
               setCreating(false);
-              setTab("Onboardings");
+              setTab(listTab);
               setSelected(p.id);
             }}
           />
@@ -1418,16 +1540,24 @@ function NewProcess({
   scope: Scope;
   save: (p: Process) => void;
 }) {
+  const offboarding = scope.journey === "offboarding";
+  const [termination, setTermination] = useState<Termination>("Voluntário");
   const [name, setName] = useState("");
   const [contract, setContract] = useState<Contract>("CLT");
   const [sector, setSector] = useState(sectors[0]);
   const [job, setJob] = useState(jobs[0]);
-  const [duration, setDuration] = useState(90);
+  const [duration, setDuration] = useState(offboarding ? 30 : 90);
   const [start, setStart] = useState(new Date().toISOString().slice(0, 10));
   const [error, setError] = useState("");
   let sources: string[] = [];
   try {
-    sources = compose(state.templates, contract, sector, job).sources;
+    sources = compose(
+      state.templates,
+      contract,
+      sector,
+      job,
+      offboarding ? termination : undefined,
+    ).sources;
   } catch {}
   return (
     <form
@@ -1439,7 +1569,13 @@ function NewProcess({
             throw Error(
               "Informe nome, início e duração válida entre 1 e 730 dias.",
             );
-          const tracks = compose(state.templates, contract, sector, job);
+          const tracks = compose(
+            state.templates,
+            contract,
+            sector,
+            job,
+            offboarding ? termination : undefined,
+          );
           save({
             ...tracks,
             id: crypto.randomUUID(),
@@ -1450,6 +1586,7 @@ function NewProcess({
             sector,
             job,
             contract,
+            termination: offboarding ? termination : undefined,
             start,
             duration,
             column: state.columns[0].id,
@@ -1465,6 +1602,19 @@ function NewProcess({
         convite ou vínculo real. A liderança é demonstrativa e não representa
         uma atribuição de acesso remoto.
       </p>
+      {offboarding && (
+        <label className="block text-xs">
+          Tipo de desligamento
+          <Select
+            aria-label="Tipo de desligamento"
+            value={termination}
+            onChange={(e) => setTermination(e.target.value as Termination)}
+          >
+            <option>Voluntário</option>
+            <option>Involuntário</option>
+          </Select>
+        </label>
+      )}
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="text-xs sm:col-span-2">
           Nome do profissional
@@ -1484,7 +1634,7 @@ function NewProcess({
             onChange={(e) => {
               const c = e.target.value as Contract;
               setContract(c);
-              setDuration(defaultDuration(c));
+              setDuration(offboarding ? 30 : defaultDuration(c));
             }}
           >
             {["CLT", "Estágio", "PJ"].map((v) => (

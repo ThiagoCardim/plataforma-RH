@@ -1,6 +1,13 @@
 export type Contract = "CLT" | "Estágio" | "PJ";
 export type Mode = "rh" | "leader" | "professional";
-export type Scope = { mode: Mode; user: string; name: string; key: string };
+export type Termination = "Voluntário" | "Involuntário";
+export type Scope = {
+  journey?: "onboarding" | "offboarding";
+  mode: Mode;
+  user: string;
+  name: string;
+  key: string;
+};
 export const kinds = [
   "Texto",
   "Checklist",
@@ -39,6 +46,7 @@ export type Stage = {
   checked: string[];
 };
 export type Template = {
+  termination?: Termination;
   id: string;
   name: string;
   track: "institutional" | "technical";
@@ -51,6 +59,7 @@ export type Template = {
   version: number;
 };
 export type Process = {
+  termination?: Termination;
   id: string;
   name: string;
   user: string;
@@ -68,6 +77,7 @@ export type Process = {
   sources: string[];
 };
 export type Event = {
+  track?: "institutional" | "technical";
   id: string;
   at: string;
   actor: string;
@@ -117,14 +127,49 @@ export function canComplete(
   stage: Stage,
 ) {
   return (
-    canManage(scope, p, track) ||
-    (scope.mode === "professional" &&
+    (canManage(scope, p, track) &&
+      (scope.journey !== "offboarding" ||
+        scope.mode === "rh" ||
+        stage.owner === "Liderança")) ||
+    (scope.journey !== "offboarding" &&
+      scope.mode === "professional" &&
       p.user === scope.user &&
       stage.public &&
       stage.owner === "Profissional")
   );
 }
 export function project(state: State, scope: Scope): State {
+  if (scope.journey === "offboarding") {
+    if (scope.mode === "professional")
+      return { ...state, processes: [], templates: [], events: [] };
+    if (scope.mode === "leader") {
+      const processes = state.processes
+        .filter((p) => p.leader === scope.user)
+        .map((p) => ({
+          ...p,
+          termination: undefined,
+          institutional: [],
+          technical: p.technical.filter((s) => s.owner === "Liderança"),
+          sources: [],
+        }));
+      return {
+        ...state,
+        processes,
+        templates: state.templates
+          .filter((t) => t.track === "technical" && t.leader === scope.user)
+          .map((t) => ({
+            ...t,
+            stages: t.stages.filter((s) => s.owner === "Liderança"),
+          })),
+        events: state.events.filter(
+          (e) =>
+            e.track === "technical" &&
+            processes.some((p) => p.id === e.process),
+        ),
+      };
+    }
+  }
+
   const processes = state.processes
     .filter(
       (p) =>
@@ -170,9 +215,11 @@ export function compose(
   contract: Contract,
   sector: string,
   job: string,
+  termination?: Termination,
 ) {
   const matches = templates.filter(
     (t) =>
+      (!termination || t.termination === termination) &&
       t.status === "Aprovado" &&
       t.contract === contract &&
       (t.sector === "Todos" || t.sector === sector) &&
@@ -214,17 +261,19 @@ export function compose(
     ],
   };
 }
-export function newStage(): Stage {
+export function newStage(offboarding = false): Stage {
   return {
     id: crypto.randomUUID(),
     name: "Nova etapa",
-    owner: "Profissional",
+    owner: offboarding ? "Liderança" : "Profissional",
     days: 7,
-    public: true,
+    public: !offboarding,
     tasks: [
       {
         id: crypto.randomUUID(),
-        title: "Concluir atividade de integração",
+        title: offboarding
+          ? "Concluir pendência operacional demonstrativa"
+          : "Concluir atividade de integração",
         required: true,
         done: false,
       },
