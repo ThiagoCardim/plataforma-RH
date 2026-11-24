@@ -35,6 +35,13 @@ export const upcomingModules = {
     description:
       "Conversas e perspectivas para acompanhar o desempenho e orientar o desenvolvimento.",
   },
+  pdi: {
+    label: "PDI",
+    group: "Desempenho",
+    icon: "career",
+    description:
+      "Planos de desenvolvimento individual com objetivos, ações e acompanhamento.",
+  },
   "metas-dos-lideres": {
     label: "Metas dos Líderes",
     group: "Desempenho",

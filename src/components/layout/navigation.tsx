@@ -12,10 +12,14 @@ export function Navigation({
   management,
   dashboard,
   operational = false,
+  career = false,
+  pdi = false,
 }: {
   management: boolean;
   dashboard: boolean;
   operational?: boolean;
+  career?: boolean;
+  pdi?: boolean;
 }) {
   const pathname = usePathname();
   const groups: { title: string; links: Item[]; separated?: boolean }[] = [
@@ -65,6 +69,15 @@ export function Navigation({
                     },
                   ]
                 : []),
+              ...(career
+                ? [
+                    {
+                      href: "/plano-de-carreira",
+                      label: "Plano de Carreira",
+                      icon: "career" as const,
+                    },
+                  ]
+                : []),
               {
                 href: "/home-office",
                 label: "Home Office",
@@ -72,6 +85,16 @@ export function Navigation({
               },
             ],
           },
+          ...(pdi
+            ? [
+                {
+                  title: "Desempenho",
+                  links: [
+                    { href: "/pdi", label: "PDI", icon: "career" as const },
+                  ],
+                },
+              ]
+            : []),
           {
             title: "Políticas",
             links: moduleEntries

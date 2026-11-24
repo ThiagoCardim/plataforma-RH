@@ -45,7 +45,9 @@ describe("navigation preserves access and existing destinations", () => {
         id !== "politicas-compliance" &&
         id !== "onboarding-offboarding" &&
         id !== "offboarding" &&
-        id !== "home-office",
+        id !== "home-office" &&
+        id !== "plano-de-carreira" &&
+        id !== "pdi",
     ))
       expect(html).not.toContain(`href="/${id}"`);
     expect(html).not.toContain("Dashboard Gerencial");
@@ -77,6 +79,30 @@ describe("navigation preserves access and existing destinations", () => {
     expect(html).toContain("Dashboard Gerencial");
     expect(html).not.toContain("Colaboradores");
   });
+  it("adds eligible career and PDI links without exposing administrative modules", () => {
+    const employee = renderToStaticMarkup(
+      createElement(Navigation, {
+        management: false,
+        dashboard: false,
+        career: true,
+        pdi: true,
+      }),
+    );
+    expect(employee).toContain('href="/plano-de-carreira"');
+    expect(employee).toContain('href="/pdi"');
+    expect(employee).not.toContain('href="/gente-gestao"');
+    expect(employee).not.toContain('href="/avaliacao-de-desempenho"');
+    const pj = renderToStaticMarkup(
+      createElement(Navigation, {
+        management: false,
+        dashboard: false,
+        career: false,
+        pdi: false,
+      }),
+    );
+    expect(pj).not.toContain('href="/plano-de-carreira"');
+    expect(pj).not.toContain('href="/pdi"');
+  });
   it("only selects Colaboradores for its actual subtree", () => {
     expect(
       isNavigationActive(
@@ -97,7 +123,9 @@ describe("every initial module has a server guard", () => {
       id !== "politicas-compliance" &&
       id !== "onboarding-offboarding" &&
       id !== "offboarding" &&
-      id !== "home-office",
+      id !== "home-office" &&
+      id !== "plano-de-carreira" &&
+      id !== "pdi",
   )) {
     it(`blocks unauthorized direct access to ${entry.label}`, async () => {
       guard.mockRejectedValue(new Error("denied"));
