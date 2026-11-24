@@ -311,7 +311,7 @@ try {
       if (role === "director")
         await page.screenshot({
           path: "work/onboarding-review/kanban.png",
-          fullPage: true,
+          fullPage: false,
         });
       await page
         .getByRole("button", { name: "Personalizar quadro", exact: true })
