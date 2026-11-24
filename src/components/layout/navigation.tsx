@@ -47,11 +47,19 @@ export function Navigation({
     ...(!management
       ? [
           {
+            title: "Pessoas",
+            links: [
+              {
+                href: "/onboarding-offboarding",
+                label: "Onboarding",
+                icon: "journey" as const,
+              },
+            ],
+          },
+          {
             title: "Políticas",
             links: moduleEntries
-              .filter(
-                ([id]) => id === "compliance" || id === "politicas-internas",
-              )
+              .filter(([id]) => id === "politicas-compliance")
               .map(([id, entry]) => ({
                 href: `/${id}`,
                 label: entry.label,

@@ -23,9 +23,11 @@ describe("Document authorization projections", () => {
         ),
       ).toBe(true);
     });
-  it("separates libraries and includes all management states", () => {
+  it("unifies libraries without losing documents or management states", () => {
     const docs = demoDocuments(true, "CLT");
-    expect(new Set(docs.map((d) => d.library)).size).toBe(2);
+    expect(new Set(docs.map((d) => d.library)).size).toBe(1);
+    expect(docs).toHaveLength(12);
+    expect(new Set(docs.map((d) => d.id)).size).toBe(12);
     expect(new Set(docs.map((d) => d.status)).size).toBe(5);
   });
   it("does not expose draft changes over a published version", () => {

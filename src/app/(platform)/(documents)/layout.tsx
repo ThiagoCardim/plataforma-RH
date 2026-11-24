@@ -11,6 +11,8 @@ export default async function Layout({
     <DocumentsProvider
       key={access.key}
       initial={demoDocuments(access.manager, access.audience)}
+      persistenceKey={`documents-unified-v1:${access.key}:${access.manager}:${access.audience}`}
+      audience={access.audience}
       manager={access.manager}
       author={access.author}
     >

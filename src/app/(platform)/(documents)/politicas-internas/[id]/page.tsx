@@ -1,11 +1,9 @@
-import { documentsAccess } from "@/modules/documents/access";
-import { DocumentWorkspace } from "@/modules/documents/workspace";
+import { redirect } from "next/navigation";
 export default async function Page({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await documentsAccess();
   const { id } = await params;
-  return <DocumentWorkspace library="politicas-internas" id={id} />;
+  redirect(`/politicas-compliance/${encodeURIComponent(id)}`);
 }

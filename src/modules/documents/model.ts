@@ -1,4 +1,4 @@
-export type Library = "compliance" | "politicas-internas";
+export type Library = "politicas-compliance";
 export const statuses = [
   "Rascunho",
   "Em revisão",
@@ -46,8 +46,7 @@ export type Document = Content & {
   readVersion?: number;
 };
 export const libraryNames: Record<Library, string> = {
-  compliance: "Compliance",
-  "politicas-internas": "Políticas Internas",
+  "politicas-compliance": "Políticas e Compliance",
 };
 export const audiences = ["CLT", "Estágio", "PJ"];
 export function readable(doc: Document, audience: string) {
@@ -63,6 +62,7 @@ export function readerProjection(doc: Document): Document {
     id: doc.id,
     library: doc.library,
     versions: [],
+    readVersion: doc.readVersion,
     published: doc.published,
   };
 }

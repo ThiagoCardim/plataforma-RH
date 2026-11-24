@@ -1,13 +1,12 @@
 import "server-only";
 import {
   type Document,
-  type Library,
   type Content,
   readable,
   readerProjection,
 } from "./model";
 export function demoDocuments(manager: boolean, audience: string): Document[] {
-  const titles: Record<Library, string[]> = {
+  const titles: Record<string, string[]> = {
     "politicas-internas": [
       "Trabalho remoto e colaboração",
       "Convivência e uso dos espaços",
@@ -88,7 +87,7 @@ export function demoDocuments(manager: boolean, audience: string): Document[] {
       return {
         ...content,
         id: `${library}-${i + 1}`,
-        library: library as Library,
+        library: "politicas-compliance" as const,
         versions: [
           {
             number: 1,

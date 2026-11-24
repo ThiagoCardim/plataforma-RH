@@ -1,7 +1,7 @@
 /** Initial modules inherit the existing management boundary; no new grants. */
 export const upcomingModules = {
   "onboarding-offboarding": {
-    label: "Onboarding e Offboarding",
+    label: "Onboarding",
     group: "Pessoas",
     icon: "journey",
     description:
@@ -49,19 +49,12 @@ export const upcomingModules = {
     description:
       "Os valores e as atitudes que conectam as pessoas e dão forma à nossa cultura.",
   },
-  compliance: {
-    label: "Compliance",
+  "politicas-compliance": {
+    label: "Políticas e Compliance",
     group: "Políticas",
     icon: "policies",
     description:
-      "Referências e orientações para uma atuação responsável, ética e transparente.",
-  },
-  "politicas-internas": {
-    label: "Políticas Internas",
-    group: "Políticas",
-    icon: "policies",
-    description:
-      "Um espaço para reunir as políticas internas e as orientações da organização.",
+      "Políticas internas, integridade e orientações em uma única central.",
   },
   "programa-de-indicacao-de-vagas": {
     label: "Programa de Indicação de Vagas",
@@ -79,8 +72,7 @@ export const moduleEntries = Object.entries(upcomingModules) as [
 export function isNavigationActive(pathname: string, href: string) {
   return (
     pathname === href ||
-    ((href === "/compliance" || href === "/politicas-internas") &&
-      pathname.startsWith(href + "/")) ||
+    (href === "/politicas-compliance" && pathname.startsWith(href + "/")) ||
     (href === "/gente-gestao" && pathname.startsWith("/gente-gestao/pessoas"))
   );
 }
@@ -93,14 +85,10 @@ export function routeLabel(pathname: string) {
     if (pathname.endsWith("/editar")) return "Editar pessoa";
     return "Ficha da pessoa";
   }
-  if (pathname.startsWith("/compliance/"))
+  if (pathname.startsWith("/politicas-compliance/"))
     return pathname.endsWith("/novo")
       ? "Novo documento"
-      : "Documento de Compliance";
-  if (pathname.startsWith("/politicas-internas/"))
-    return pathname.endsWith("/novo")
-      ? "Novo documento"
-      : "Políticas Internas · Documento";
+      : "Políticas e Compliance · Documento";
   return (
     moduleEntries.find(([id]) => pathname === `/${id}`)?.[1].label ?? "Início"
   );

@@ -14,15 +14,14 @@ const port = 3103,
 const base = `http://127.0.0.1:${port}`;
 await mkdir("work/stage-03b", { recursive: true });
 const navigationPages = [
-  ["onboarding-offboarding", "Onboarding e Offboarding"],
+  ["onboarding-offboarding", "Onboarding"],
   ["plano-de-carreira", "Plano de Carreira"],
   ["home-office", "Home Office"],
   ["avaliacao-de-desempenho", "Avaliação de Desempenho"],
   ["metas-dos-lideres", "Metas dos Líderes"],
   ["youcon-academy", "YouCon Academy"],
   ["cultura", "Cultura"],
-  ["compliance", "Compliance"],
-  ["politicas-internas", "Políticas Internas"],
+  ["politicas-compliance", "Políticas e Compliance"],
   ["programa-de-indicacao-de-vagas", "Programa de Indicação de Vagas"],
 ];
 await mkdir("work/navigation-review", { recursive: true });
@@ -177,16 +176,16 @@ try {
     const ctx = await contextFor(role),
       page = await ctx.newPage();
     for (const route of routes.filter(
-      (r) => !["/compliance", "/politicas-internas"].includes(r),
+      (r) => !["/politicas-compliance", "/onboarding-offboarding"].includes(r),
     )) {
       await page.goto(`${base}${route}`);
       await page.waitForURL(/\/acesso-negado$/);
     }
-    for (const lib of ["compliance", "politicas-internas"]) {
+    for (const lib of ["politicas-compliance"]) {
       await page.goto(`${base}/${lib}`);
       await page
         .getByRole("heading", {
-          name: lib === "compliance" ? "Compliance" : "Políticas Internas",
+          name: "Políticas e Compliance",
           exact: true,
         })
         .waitFor();
@@ -478,7 +477,7 @@ try {
     const nav = page
       .locator(".desktop-sidebar")
       .getByRole("navigation", { name: "Navegação principal", exact: true });
-    assert.equal(await nav.getByRole("link").count(), 13);
+    assert.equal(await nav.getByRole("link").count(), 12);
     assert.equal(
       await nav
         .getByRole("link", { name: "Gente & Gestão", exact: true })
@@ -488,7 +487,7 @@ try {
     for (const [slug, label] of navigationPages) {
       await nav.getByRole("link", { name: label, exact: true }).click();
       await page.getByRole("heading", { name: label, exact: true }).waitFor();
-      if (!["compliance", "politicas-internas"].includes(slug))
+      if (!["politicas-compliance", "onboarding-offboarding"].includes(slug))
         await page.getByText("Em preparação", { exact: true }).waitFor();
       assert.equal(new URL(page.url()).pathname, `/${slug}`);
       assert.equal(await nav.locator('a[aria-current="page"]').count(), 1);
@@ -530,11 +529,9 @@ try {
         fullPage: true,
         animations: "disabled",
       });
-      await nav
-        .getByRole("link", { name: "Onboarding e Offboarding", exact: true })
-        .click();
+      await nav.getByRole("link", { name: "Onboarding", exact: true }).click();
       await page
-        .getByRole("heading", { name: "Onboarding e Offboarding", exact: true })
+        .getByRole("heading", { name: "Onboarding", exact: true })
         .waitFor();
       await nav.evaluate((el) => {
         el.scrollTop = 0;
@@ -632,9 +629,9 @@ try {
       );
     }
     await page.setViewportSize({ width: 1440, height: 1100 });
-    await page.goto(`${base}/politicas-internas`);
+    await page.goto(`${base}/politicas-compliance`);
     await page
-      .getByRole("heading", { name: "Políticas Internas", exact: true })
+      .getByRole("heading", { name: "Políticas e Compliance", exact: true })
       .waitFor();
     await page.getByLabel("Pesquisar documento").fill("Trabalho remoto");
     await page.getByText("1 documentos encontrados", { exact: true }).waitFor();
@@ -644,7 +641,7 @@ try {
     await page
       .getByRole("combobox", { name: /^Status/ })
       .selectOption("Rascunho");
-    await page.getByText("1 documentos encontrados", { exact: true }).waitFor();
+    await page.getByText("2 documentos encontrados", { exact: true }).waitFor();
     await page
       .getByRole("button", { name: "Limpar filtros", exact: true })
       .click();

@@ -1,3 +1,5 @@
+> Atualização: a central agora é **Políticas e Compliance** (`/politicas-compliance`), com persistência demonstrativa no navegador. As URLs antigas redirecionam. Para o comportamento atual, limites e validações, consulte [Onboarding e central unificada](../onboarding/README.md). O relato abaixo registra a entrega anterior em memória.
+
 # Central demonstrativa de documentos
 
 Políticas Internas (`/politicas-internas`) e Compliance (`/compliance`) usam os mesmos componentes, com bibliotecas independentes. Esta entrega é uma experiência funcional com dados fictícios e estado em memória, sem persistência de documentos no Supabase.

@@ -14,6 +14,8 @@ import {
   snapshot,
   differences,
 } from "./model";
+import { useLocalDemo } from "@/modules/local-demo/use-local-demo";
+import { readable, readerProjection } from "./model";
 type Store = {
   docs: Document[];
   manager: boolean;
@@ -28,16 +30,29 @@ type Store = {
 const Context = createContext<Store | null>(null);
 export function DocumentsProvider({
   initial,
+  persistenceKey,
+  audience,
   manager,
   author,
   children,
 }: {
   initial: Document[];
+  persistenceKey: string;
+  audience: string;
   manager: boolean;
   author: string;
   children: ReactNode;
 }) {
-  const [docs, setDocs] = useState(initial);
+  const {
+    value: docs,
+    setValue: setDocs,
+    ready,
+    error,
+  } = useLocalDemo(persistenceKey, initial, (docs) =>
+    manager
+      ? docs
+      : docs.filter((d) => readable(d, audience)).map(readerProjection),
+  );
   const [notice, setNotice] = useState("");
   const urls = useRef<string[]>([]);
   useEffect(
@@ -76,7 +91,7 @@ export function DocumentsProvider({
         ? current.map((d) => (d.id === id ? next : d))
         : [next, ...current];
     });
-    setNotice("Simulação salva em memória. Nenhuma gravação definitiva.");
+    setNotice("Simulação salva neste navegador. Nenhuma gravação remota.");
     return true;
   }
   function duplicate(id: string) {
@@ -102,6 +117,7 @@ export function DocumentsProvider({
     );
     setNotice("Leitura confirmada somente nesta demonstração.");
   }
+  if (!ready) return <p role="status">Carregando demonstração local…</p>;
   return (
     <Context
       value={{
@@ -119,10 +135,31 @@ export function DocumentsProvider({
       <div className="mb-6 rounded-xl border border-orange-200 bg-accent p-4 text-xs leading-5 text-accent-foreground">
         <strong>Demonstração local · documentos fictícios</strong>
         <p>
-          Alterações, anexos e confirmações ficam somente em memória. Recarregar
-          descarta tudo. Use apenas arquivos e informações fictícios.
+          Alterações, arquivos e confirmações ficam apenas neste navegador. Não
+          há sincronização entre contas ou dispositivos. Use apenas dados
+          fictícios.
         </p>
       </div>
+      <button
+        className="mb-4 text-xs text-muted-foreground underline"
+        onClick={() => {
+          if (
+            window.confirm(
+              "Restaurar os documentos fictícios e descartar alterações locais?",
+            )
+          ) {
+            setDocs(initial);
+            setNotice("Documentos demonstrativos restaurados.");
+          }
+        }}
+      >
+        Restaurar demonstração de documentos
+      </button>
+      {error && (
+        <p role="alert" className="mb-4 text-sm text-destructive">
+          {error}
+        </p>
+      )}
       <p role="status" className="mb-4 text-xs text-emerald-800">
         {notice}
       </p>
