@@ -181,6 +181,7 @@ try {
         ![
           "/politicas-compliance",
           "/onboarding-offboarding",
+          "/home-office",
           ...(role === "leadership" ? ["/offboarding"] : []),
         ].includes(r),
     )) {
@@ -498,6 +499,7 @@ try {
           "politicas-compliance",
           "onboarding-offboarding",
           "offboarding",
+          "home-office",
         ].includes(slug)
       )
         await page.getByText("Em preparação", { exact: true }).waitFor();

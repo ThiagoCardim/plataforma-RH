@@ -65,6 +65,11 @@ export function Navigation({
                     },
                   ]
                 : []),
+              {
+                href: "/home-office",
+                label: "Home Office",
+                icon: "remote" as const,
+              },
             ],
           },
           {

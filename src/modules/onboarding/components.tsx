@@ -24,6 +24,7 @@ export function Modal({
   return (
     <dialog
       ref={ref}
+      aria-label={title}
       onCancel={close}
       className="m-auto max-h-[92dvh] w-[min(960px,96vw)] overflow-y-auto rounded-2xl border bg-background p-0 text-foreground shadow-2xl backdrop:bg-black/40"
     >

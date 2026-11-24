@@ -44,7 +44,8 @@ describe("navigation preserves access and existing destinations", () => {
       ([id]) =>
         id !== "politicas-compliance" &&
         id !== "onboarding-offboarding" &&
-        id !== "offboarding",
+        id !== "offboarding" &&
+        id !== "home-office",
     ))
       expect(html).not.toContain(`href="/${id}"`);
     expect(html).not.toContain("Dashboard Gerencial");
@@ -95,7 +96,8 @@ describe("every initial module has a server guard", () => {
     ([id]) =>
       id !== "politicas-compliance" &&
       id !== "onboarding-offboarding" &&
-      id !== "offboarding",
+      id !== "offboarding" &&
+      id !== "home-office",
   )) {
     it(`blocks unauthorized direct access to ${entry.label}`, async () => {
       guard.mockRejectedValue(new Error("denied"));
