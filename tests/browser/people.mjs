@@ -19,6 +19,7 @@ const navigationPages = [
   ["plano-de-carreira", "Plano de Carreira"],
   ["home-office", "Home Office"],
   ["avaliacao-de-desempenho", "Avaliação de Desempenho"],
+  ["hall-de-destaques", "Hall de Destaques"],
   ["pdi", "PDI"],
   ["metas-dos-lideres", "Metas dos Líderes"],
   ["youcon-academy", "YouCon Academy"],
@@ -183,6 +184,7 @@ try {
           "/politicas-compliance",
           "/onboarding-offboarding",
           "/home-office",
+          "/hall-de-destaques",
           ...(role === "leadership" ? ["/offboarding", "/pdi"] : []),
         ].includes(r),
     )) {
@@ -485,7 +487,7 @@ try {
     const nav = page
       .locator(".desktop-sidebar")
       .getByRole("navigation", { name: "Navegação principal", exact: true });
-    assert.equal(await nav.getByRole("link").count(), 14);
+    assert.equal(await nav.getByRole("link").count(), 15);
     assert.equal(
       await nav
         .getByRole("link", { name: "Gente & Gestão", exact: true })
@@ -503,6 +505,9 @@ try {
           "home-office",
           "plano-de-carreira",
           "pdi",
+          "hall-de-destaques",
+          "avaliacao-de-desempenho",
+          "metas-dos-lideres",
         ].includes(slug)
       )
         await page.getByText("Em preparação", { exact: true }).waitFor();

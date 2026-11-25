@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   UserRoundPlus,
   Home,
+  Trophy,
 } from "lucide-react";
 export const navigationIcons = {
   people: Users,
@@ -23,5 +24,6 @@ export const navigationIcons = {
   policies: ShieldCheck,
   referrals: UserRoundPlus,
   home: Home,
+  trophy: Trophy,
   dashboard: ChartNoAxesCombined,
 };

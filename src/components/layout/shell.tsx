@@ -28,6 +28,7 @@ export function Shell({
   const name = personalName(access.displayName);
   const navigation = (
     <Navigation
+      performance={access.membership.contract_type !== "pj"}
       career={access.membership.contract_type !== "pj"}
       pdi={
         access.membership.contract_type !== "pj" ||

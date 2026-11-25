@@ -1,4 +1,5 @@
 "use client";
+import { EvaluationReferences } from "@/modules/development-links/references";
 import Link from "next/link";
 import { useState } from "react";
 import {
@@ -986,6 +987,11 @@ export function CareerWorkspace({
               );
             return (
               <article className="rounded-2xl border bg-card p-6" key={c.id}>
+                <EvaluationReferences
+                  scope={scope}
+                  target="recognition"
+                  targetId={c.id}
+                />
                 <header className="flex flex-wrap justify-between gap-3">
                   <div>
                     <Badge>{c.status}</Badge>

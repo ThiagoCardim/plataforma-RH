@@ -483,13 +483,11 @@ try {
       await page
         .getByLabel("Descrição da evidência")
         .fill("Revisão técnica acompanhada registrada localmente.");
-      await page
-        .getByLabel("Arquivo da evidência")
-        .setInputFiles({
-          name: "aprendizados.txt",
-          mimeType: "text/plain",
-          buffer: Buffer.from("Evidência exclusivamente fictícia"),
-        });
+      await page.getByLabel("Arquivo da evidência").setInputFiles({
+        name: "aprendizados.txt",
+        mimeType: "text/plain",
+        buffer: Buffer.from("Evidência exclusivamente fictícia"),
+      });
       await tab(page, "Salvar evidência local");
       await close(page);
       await page.reload();
@@ -590,6 +588,14 @@ try {
         0,
       );
       await page.getByRole("button", { name: /Gabriel Exemplo/ }).waitFor();
+      await page.getByRole("button", { name: /Gabriel Exemplo/ }).click();
+      assert.equal(
+        await page
+          .getByRole("link", { name: "Consultar avaliações", exact: true })
+          .count(),
+        0,
+      );
+      await close(page);
     }
     await ctx.close();
   }

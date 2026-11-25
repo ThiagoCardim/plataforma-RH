@@ -52,6 +52,10 @@ async function write(key: string, value: unknown) {
     db.close();
   }
 }
+export async function loadLocalDemo<T>(key: string): Promise<T | undefined> {
+  const value = await read(key);
+  return value ? ((await transform(value, false)) as T) : undefined;
+}
 export function useLocalDemo<T>(
   key: string,
   initial: T,

@@ -1,4 +1,5 @@
 "use client";
+import { EvaluationReferences } from "@/modules/development-links/references";
 import { useState } from "react";
 import {
   Plus,
@@ -448,6 +449,7 @@ export function PdiWorkspace({
         >
           {messages}
           <div className="space-y-5">
+            <EvaluationReferences scope={scope} target="pdi" targetId={p.id} />
             <header className="flex flex-wrap justify-between gap-3">
               <div>
                 <Badge>

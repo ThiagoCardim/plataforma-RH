@@ -1,4 +1,4 @@
-/** Initial modules inherit the existing management boundary; no new grants. */
+/** Each module route enforces its existing-role access boundary; no remote grants. */
 export const upcomingModules = {
   "onboarding-offboarding": {
     label: "Onboarding",
@@ -34,6 +34,13 @@ export const upcomingModules = {
     icon: "performance",
     description:
       "Conversas e perspectivas para acompanhar o desempenho e orientar o desenvolvimento.",
+  },
+  "hall-de-destaques": {
+    label: "Hall de Destaques",
+    group: "Desempenho",
+    icon: "trophy",
+    description:
+      "Reconhecimentos publicados, conquistas e cerimônias por categoria.",
   },
   pdi: {
     label: "PDI",
