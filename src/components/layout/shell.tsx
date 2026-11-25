@@ -34,6 +34,17 @@ export function Shell({
         access.membership.contract_type !== "pj" ||
         access.roles.includes("leadership")
       }
+      recruitment={
+        hasPermission(access.permissions, "people.management.view") &&
+        access.roles.includes("hr")
+          ? "hr"
+          : hasPermission(access.permissions, "people.management.view") &&
+              access.roles.includes("director")
+            ? "director"
+            : access.roles.includes("leadership")
+              ? "leader"
+              : null
+      }
       operational={access.roles.includes("leadership")}
       management={hasPermission(access.permissions, "people.management.view")}
       dashboard={hasPermission(access.permissions, "people.dashboard.view")}

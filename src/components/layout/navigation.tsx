@@ -15,6 +15,7 @@ export function Navigation({
   career = false,
   pdi = false,
   performance = false,
+  recruitment = null,
 }: {
   management: boolean;
   dashboard: boolean;
@@ -22,6 +23,7 @@ export function Navigation({
   career?: boolean;
   pdi?: boolean;
   performance?: boolean;
+  recruitment?: "hr" | "director" | "leader" | null;
 }) {
   const pathname = usePathname();
   const groups: { title: string; links: Item[]; separated?: boolean }[] = [
@@ -124,6 +126,32 @@ export function Navigation({
                 href: `/${id}`,
                 label: entry.label,
                 icon: entry.icon,
+              })),
+          },
+        ]
+      : []),
+    ...(recruitment
+      ? [
+          {
+            title: "Recrutamento",
+            links: (
+              [
+                ["visao-geral", "Visão Geral", "dashboard"],
+                ["vagas", "Gestão de Vagas", "referrals"],
+                ["talentos", "Banco de Talentos", "people"],
+                ["match", "YouCon Match", "goals"],
+                ["modelos", "Modelos e Avaliações", "policies"],
+                ["carreiras", "Página de Carreiras", "career"],
+              ] as const
+            )
+              .filter(
+                ([v]) =>
+                  recruitment === "hr" || ["visao-geral", "vagas"].includes(v),
+              )
+              .map(([v, label, icon]) => ({
+                href: `/recrutamento/${v}`,
+                label,
+                icon,
               })),
           },
         ]

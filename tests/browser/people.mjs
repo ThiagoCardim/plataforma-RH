@@ -489,7 +489,7 @@ try {
     const nav = page
       .locator(".desktop-sidebar")
       .getByRole("navigation", { name: "Navegação principal", exact: true });
-    assert.equal(await nav.getByRole("link").count(), 15);
+    assert.equal(await nav.getByRole("link").count(), role === "hr" ? 21 : 17);
     assert.equal(
       await nav
         .getByRole("link", { name: "Gente & Gestão", exact: true })

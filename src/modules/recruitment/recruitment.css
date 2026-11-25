@@ -1,0 +1,45 @@
+.ats-hero,
+.ats-careers {
+  background:
+    radial-gradient(ellipse at 100% 100%, #7d300b 0, transparent 62%), #181817;
+}
+.ats-match {
+  background:
+    radial-gradient(ellipse at 100% 30%, #7b310f 0, transparent 58%), #181817;
+}
+.ats-hero:after,
+.ats-careers:after {
+  content: "";
+  position: absolute;
+  inset: -120px -120px auto auto;
+  width: 360px;
+  aspect-ratio: 1;
+  border: 50px solid #ffffff04;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.ats-candidate {
+  transition:
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+.ats-candidate[draggable="true"] {
+  cursor: grab;
+}
+.ats-candidate[draggable="true"]:active {
+  cursor: grabbing;
+}
+.ats-candidate:hover {
+  box-shadow: 0 8px 24px #0000000a;
+}
+.ats-shell :is(button, a, input, select, textarea, summary):focus-visible {
+  outline: 2px solid #e76812;
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ats-shell * {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}

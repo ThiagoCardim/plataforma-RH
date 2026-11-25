@@ -98,6 +98,19 @@ export function isNavigationActive(pathname: string, href: string) {
   );
 }
 export function routeLabel(pathname: string) {
+  if (pathname.startsWith("/recrutamento/"))
+    return (
+      (
+        {
+          "visao-geral": "Recrutamento · Visão Geral",
+          vagas: "Gestão de Vagas",
+          talentos: "Banco de Talentos",
+          match: "YouCon Match",
+          modelos: "Modelos e Avaliações",
+          carreiras: "Página de Carreiras",
+        } as Record<string, string>
+      )[pathname.split("/")[2]] ?? "Recrutamento"
+    );
   if (pathname === "/gente-gestao/dashboard") return "Dashboard Gerencial";
   if (pathname === "/gente-gestao" || pathname === "/gente-gestao/pessoas")
     return "Colaboradores";

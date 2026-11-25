@@ -1,4 +1,5 @@
 "use client";
+import { RecruitmentAdmissions } from "@/modules/recruitment/handoff";
 import { OnboardingCulture } from "@/modules/culture/manual";
 import type { CultureState } from "@/modules/culture/model";
 import { AcademyReferences } from "@/modules/academy/links";
@@ -353,6 +354,13 @@ export function OnboardingWorkspace({
       <p className="text-xs text-emerald-800" role="status">
         {notice}
       </p>
+      {!offboarding && academyScope?.rh && (
+        <RecruitmentAdmissions
+          scope={academyScope}
+          target={state}
+          change={set}
+        />
+      )}
       {(tab === "Visão Geral" || tab === listTab) && (
         <div className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-3">
           <label className="relative text-xs">
