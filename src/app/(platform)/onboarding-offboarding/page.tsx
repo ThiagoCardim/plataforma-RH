@@ -1,3 +1,4 @@
+import { demoCulture } from "@/modules/culture/fixtures";
 import { careerScope } from "@/modules/career/access";
 import { requirePermission } from "@/modules/access/server";
 import { demoOnboarding } from "@/modules/onboarding/fixtures";
@@ -23,6 +24,7 @@ export default async function Page() {
   return (
     <OnboardingWorkspace
       academyScope={academyScope}
+      initialCulture={demoCulture(academyScope)}
       key={scope.key}
       scope={scope}
       initial={demoOnboarding(scope)}

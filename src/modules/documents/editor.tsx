@@ -13,15 +13,19 @@ import {
 } from "./model";
 import { FileCard } from "./file-card";
 import { Body } from "./body";
-import { useDocuments } from "./store";
+import { useOptionalDocuments } from "./store";
 export function DocumentEditor({
   initial,
   onSave,
   onCancel,
+  blocksOnly = false,
+  allowVideo = false,
 }: {
   initial: Content;
   onSave: (data: Content) => void;
   onCancel: () => void;
+  blocksOnly?: boolean;
+  allowVideo?: boolean;
 }) {
   const [data, setData] = useState<Content>(() => ({
     ...structuredClone(initial),
@@ -30,7 +34,8 @@ export function DocumentEditor({
   }));
   const [error, setError] = useState("");
   const [preview, setPreview] = useState(false);
-  const { track } = useDocuments();
+  const documentStore = useOptionalDocuments();
+  const track = (url: string) => documentStore?.track(url);
   const update = (patch: Partial<Content>) =>
     setData((old) => ({ ...old, ...patch }));
   function block(id: string, patch: Partial<Block>) {
@@ -63,7 +68,17 @@ export function DocumentEditor({
     block(
       id,
       image
-        ? { url, text: file.name }
+        ? {
+            url,
+            text: file.name,
+            file: {
+              id: crypto.randomUUID(),
+              name: file.name,
+              size: file.size,
+              type: file.type,
+              url,
+            },
+          }
         : {
             file: {
               id: crypto.randomUUID(),
@@ -95,83 +110,85 @@ export function DocumentEditor({
           {error}
         </p>
       )}
-      <div className="grid gap-5 rounded-xl border bg-card p-5 sm:grid-cols-2">
-        <label className="text-xs font-semibold sm:col-span-2">
-          Título
-          <Input
-            value={data.title}
-            required
-            maxLength={160}
-            onChange={(e) => update({ title: e.target.value })}
-            placeholder="Nome do documento"
-          />
-        </label>
-        <label className="text-xs font-semibold">
-          Categoria
-          <Input
-            required
-            value={data.category}
-            maxLength={80}
-            onChange={(e) => update({ category: e.target.value })}
-          />
-        </label>
-        <label className="text-xs font-semibold">
-          Status
-          <Select
-            aria-label="Status"
-            value={data.status}
-            onChange={(e) =>
-              update({ status: e.target.value as Content["status"] })
-            }
-          >
-            {statuses.map((s) => (
-              <option key={s}>{s}</option>
-            ))}
-          </Select>
-        </label>
-        <fieldset>
-          <legend className="mb-2 text-xs font-semibold">
-            Público destinado
-          </legend>
-          <div className="flex flex-wrap gap-4">
-            {audiences.map((a) => (
-              <label key={a} className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={data.audience.includes(a)}
-                  onChange={(e) =>
-                    update({
-                      audience: e.target.checked
-                        ? [...data.audience, a]
-                        : data.audience.filter((v) => v !== a),
-                    })
-                  }
-                />
-                {a}
-              </label>
-            ))}
-          </div>
-        </fieldset>
-        <label className="text-xs font-semibold">
-          Etiquetas (separadas por vírgula)
-          <Input
-            value={data.tags.join(", ")}
-            maxLength={200}
-            onChange={(e) =>
-              update({ tags: e.target.value.split(",").map((t) => t.trim()) })
-            }
-            placeholder="CLT, Estágio, PJ, Segurança…"
-          />
-        </label>
-        <label className="flex items-center gap-2 text-sm sm:col-span-2">
-          <input
-            type="checkbox"
-            checked={data.requireRead}
-            onChange={(e) => update({ requireRead: e.target.checked })}
-          />
-          Exigir confirmação de leitura
-        </label>
-      </div>
+      {!blocksOnly && (
+        <div className="grid gap-5 rounded-xl border bg-card p-5 sm:grid-cols-2">
+          <label className="text-xs font-semibold sm:col-span-2">
+            Título
+            <Input
+              value={data.title}
+              required
+              maxLength={160}
+              onChange={(e) => update({ title: e.target.value })}
+              placeholder="Nome do documento"
+            />
+          </label>
+          <label className="text-xs font-semibold">
+            Categoria
+            <Input
+              required
+              value={data.category}
+              maxLength={80}
+              onChange={(e) => update({ category: e.target.value })}
+            />
+          </label>
+          <label className="text-xs font-semibold">
+            Status
+            <Select
+              aria-label="Status"
+              value={data.status}
+              onChange={(e) =>
+                update({ status: e.target.value as Content["status"] })
+              }
+            >
+              {statuses.map((s) => (
+                <option key={s}>{s}</option>
+              ))}
+            </Select>
+          </label>
+          <fieldset>
+            <legend className="mb-2 text-xs font-semibold">
+              Público destinado
+            </legend>
+            <div className="flex flex-wrap gap-4">
+              {audiences.map((a) => (
+                <label key={a} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={data.audience.includes(a)}
+                    onChange={(e) =>
+                      update({
+                        audience: e.target.checked
+                          ? [...data.audience, a]
+                          : data.audience.filter((v) => v !== a),
+                      })
+                    }
+                  />
+                  {a}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <label className="text-xs font-semibold">
+            Etiquetas (separadas por vírgula)
+            <Input
+              value={data.tags.join(", ")}
+              maxLength={200}
+              onChange={(e) =>
+                update({ tags: e.target.value.split(",").map((t) => t.trim()) })
+              }
+              placeholder="CLT, Estágio, PJ, Segurança…"
+            />
+          </label>
+          <label className="flex items-center gap-2 text-sm sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={data.requireRead}
+              onChange={(e) => update({ requireRead: e.target.checked })}
+            />
+            Exigir confirmação de leitura
+          </label>
+        </div>
+      )}
       <section className="rounded-xl border bg-card p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="section-title">Conteúdo do documento</h2>
@@ -196,6 +213,7 @@ export function DocumentEditor({
         <div className="mb-5 flex flex-wrap gap-2">
           {(
             [
+              ...(allowVideo ? [["video", "Vídeo"] as const] : []),
               ["title", "Título"],
               ["text", "Texto"],
               ["list", "Lista"],
@@ -239,6 +257,7 @@ export function DocumentEditor({
                         image: "Imagem",
                         link: "Link",
                         file: "Arquivo",
+                        video: "Vídeo",
                       } as const
                     )[b.type]
                   }
@@ -331,6 +350,117 @@ export function DocumentEditor({
                       Remover arquivo
                     </Button>
                   )}
+                </div>
+              )}
+              {b.type === "video" && (
+                <div className="space-y-3">
+                  <label className="block text-xs">
+                    Vídeo local (até 25 MB)
+                    <input
+                      aria-label="Vídeo local"
+                      type="file"
+                      accept="video/mp4,video/webm"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (!f) return;
+                        if (
+                          !/^video\/(mp4|webm)$/.test(f.type) ||
+                          f.size > 25 * 1024 * 1024
+                        ) {
+                          setError("Use MP4 ou WebM de até 25 MB.");
+                          return;
+                        }
+                        setError("");
+                        const url = URL.createObjectURL(f);
+                        track(url);
+                        block(b.id, {
+                          file: {
+                            id: crypto.randomUUID(),
+                            name: f.name,
+                            type: f.type,
+                            size: f.size,
+                            url,
+                          },
+                        });
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                  {b.file && (
+                    <>
+                      <video
+                        controls
+                        preload="metadata"
+                        className="max-h-80 w-full rounded-xl"
+                        src={b.file.url}
+                      >
+                        {b.captions && (
+                          <track
+                            kind="captions"
+                            src={b.captions.url}
+                            srcLang="pt-BR"
+                            label="Português"
+                            default
+                          />
+                        )}
+                      </video>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() =>
+                          block(b.id, { file: undefined, captions: undefined })
+                        }
+                      >
+                        Remover vídeo
+                      </Button>
+                    </>
+                  )}
+                  <label className="block text-xs">
+                    Legendas VTT opcionais
+                    <input
+                      aria-label="Legendas VTT"
+                      type="file"
+                      accept=".vtt,text/vtt"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (!f) return;
+                        if (
+                          !f.name.toLowerCase().endsWith(".vtt") ||
+                          f.size > 1024 * 1024
+                        ) {
+                          setError("Use VTT de até 1 MB.");
+                          return;
+                        }
+                        const url = URL.createObjectURL(
+                          new Blob([f], { type: "text/vtt" }),
+                        );
+                        track(url);
+                        block(b.id, {
+                          captions: {
+                            id: crypto.randomUUID(),
+                            name: f.name,
+                            type: "text/vtt",
+                            size: f.size,
+                            url,
+                          },
+                        });
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                  {b.captions && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => block(b.id, { captions: undefined })}
+                    >
+                      Remover legendas
+                    </Button>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Use o texto do bloco para a transcrição ou descrição
+                    acessível. Nenhum arquivo é enviado ao servidor.
+                  </p>
                 </div>
               )}
               {b.type === "link" && (

@@ -5,7 +5,33 @@ export function Body({ blocks }: { blocks: Block[] }) {
   return (
     <div className="space-y-5 leading-7">
       {blocks.map((b) =>
-        b.type === "file" ? (
+        b.type === "video" ? (
+          <section key={b.id} className="space-y-3">
+            {b.file?.url.startsWith("blob:") ? (
+              <video
+                controls
+                preload="metadata"
+                className="max-h-[520px] w-full rounded-xl bg-black"
+                src={b.file.url}
+              >
+                {b.captions?.url.startsWith("blob:") && (
+                  <track
+                    kind="captions"
+                    src={b.captions.url}
+                    srcLang="pt-BR"
+                    label="Português"
+                    default
+                  />
+                )}
+              </video>
+            ) : (
+              <p className="text-muted-foreground">
+                Vídeo real a inserir pelo RH.
+              </p>
+            )}
+            <p className="whitespace-pre-wrap text-sm">{b.text}</p>
+          </section>
+        ) : b.type === "file" ? (
           <div key={b.id}>
             {b.file ? (
               <FileCard file={b.file} />

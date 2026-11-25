@@ -172,3 +172,7 @@ export function useDocuments() {
   if (!store) throw new Error("Biblioteca indisponível");
   return store;
 }
+
+export function useOptionalDocuments() {
+  return useContext(Context);
+}

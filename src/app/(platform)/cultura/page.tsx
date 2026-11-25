@@ -1,6 +1,17 @@
-import { upcomingModules } from "@/modules/navigation/catalog";
-import { renderUpcomingPage } from "@/modules/navigation/upcoming-page";
-export const metadata = { title: upcomingModules["cultura"].label };
+import { careerScope } from "@/modules/career/access";
+import { demoCulture } from "@/modules/culture/fixtures";
+import { CultureWorkspace } from "@/modules/culture/workspace";
+import { culturalRecognitions } from "@/modules/culture/model";
+import { demoPerformance } from "@/modules/performance/fixtures";
+export const metadata = { title: "Cultura YouCon" };
 export default async function Page() {
-  return renderUpcomingPage("cultura");
+  const scope = await careerScope();
+  return (
+    <CultureWorkspace
+      key={scope.key}
+      scope={scope}
+      initial={demoCulture(scope)}
+      initialRecognitions={culturalRecognitions(demoPerformance(scope), scope)}
+    />
+  );
 }

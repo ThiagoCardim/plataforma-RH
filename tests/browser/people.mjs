@@ -186,6 +186,7 @@ try {
           "/home-office",
           "/hall-de-destaques",
           "/youcon-academy",
+          "/cultura",
           ...(role === "leadership" ? ["/offboarding", "/pdi"] : []),
         ].includes(r),
     )) {
@@ -510,6 +511,7 @@ try {
           "avaliacao-de-desempenho",
           "metas-dos-lideres",
           "youcon-academy",
+          "cultura",
         ].includes(slug)
       )
         await page.getByText("Em preparação", { exact: true }).waitFor();

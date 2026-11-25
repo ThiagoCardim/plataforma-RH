@@ -1,4 +1,6 @@
 "use client";
+import { OnboardingCulture } from "@/modules/culture/manual";
+import type { CultureState } from "@/modules/culture/model";
 import { AcademyReferences } from "@/modules/academy/links";
 import type { Scope as AcademyScope } from "@/modules/career/model";
 import { useState } from "react";
@@ -60,10 +62,12 @@ export function OnboardingWorkspace({
   initial,
   scope,
   academyScope,
+  initialCulture,
 }: {
   initial: State;
   scope: Scope;
   academyScope?: AcademyScope;
+  initialCulture?: CultureState;
 }) {
   const offboarding = scope.journey === "offboarding";
   const title = offboarding ? "Offboarding" : "Onboarding";
@@ -814,6 +818,14 @@ export function OnboardingWorkspace({
             </div>
             <Badge>{pending(process)} obrigatórias pendentes</Badge>
           </div>
+          {!offboarding && academyScope && initialCulture && (
+            <OnboardingCulture
+              key={process.id}
+              scope={academyScope}
+              initial={initialCulture}
+              ownProcess={process.user === academyScope.user}
+            />
+          )}
           {!offboarding && academyScope && (
             <AcademyReferences
               scope={academyScope}

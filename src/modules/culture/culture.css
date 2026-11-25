@@ -1,0 +1,59 @@
+.culture-hero {
+  background:
+    radial-gradient(ellipse at 100% 100%, #7e2c06 0, transparent 55%), #171716;
+}
+.culture-orbit {
+  position: absolute;
+  right: -20%;
+  top: -30%;
+  width: 70%;
+  aspect-ratio: 1;
+  border: 80px solid #ffffff05;
+  border-radius: 50%;
+  z-index: -1;
+}
+.culture-orbit:after {
+  content: "";
+  position: absolute;
+  inset: 8%;
+  border: 1px solid #ffffff14;
+  border-radius: 50%;
+}
+.culture-photo-placeholder {
+  color: #8d7059;
+  background: linear-gradient(135deg, #f2eae0, #dfd2c4);
+  position: relative;
+}
+.culture-blueprint {
+  background-image:
+    linear-gradient(#ffffff06 1px, transparent 1px),
+    linear-gradient(90deg, #ffffff06 1px, transparent 1px);
+  background-size: 26px 26px;
+  color: #f1b18b;
+}
+.culture-lift {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.culture-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 32px #0000000b;
+}
+.culture-landing details > summary::-webkit-details-marker {
+  display: none;
+}
+.culture-shell :is(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid #e76812;
+  outline-offset: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .culture-shell * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
+  .culture-lift:hover {
+    transform: none;
+  }
+}

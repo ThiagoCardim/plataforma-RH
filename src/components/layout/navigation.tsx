@@ -117,7 +117,9 @@ export function Navigation({
           {
             title: "Políticas",
             links: moduleEntries
-              .filter(([id]) => id === "politicas-compliance")
+              .filter(
+                ([id]) => id === "politicas-compliance" || id === "cultura",
+              )
               .map(([id, entry]) => ({
                 href: `/${id}`,
                 label: entry.label,

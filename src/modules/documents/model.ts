@@ -9,10 +9,12 @@ export const statuses = [
 export type Status = (typeof statuses)[number];
 export type Block = {
   id: string;
-  type: "title" | "text" | "list" | "table" | "image" | "link" | "file";
+  type:
+    "title" | "text" | "list" | "table" | "image" | "link" | "file" | "video";
   text: string;
   url?: string;
   file?: Attachment;
+  captions?: Attachment;
 };
 export type Attachment = {
   id: string;
