@@ -50,7 +50,8 @@ describe("navigation preserves access and existing destinations", () => {
         id !== "pdi" &&
         id !== "hall-de-destaques" &&
         id !== "avaliacao-de-desempenho" &&
-        id !== "metas-dos-lideres",
+        id !== "metas-dos-lideres" &&
+        id !== "youcon-academy",
     ))
       expect(html).not.toContain(`href="/${id}"`);
     expect(html).not.toContain("Dashboard Gerencial");
@@ -131,7 +132,8 @@ describe("every initial module has a server guard", () => {
       id !== "pdi" &&
       id !== "hall-de-destaques" &&
       id !== "avaliacao-de-desempenho" &&
-      id !== "metas-dos-lideres",
+      id !== "metas-dos-lideres" &&
+      id !== "youcon-academy",
   )) {
     it(`blocks unauthorized direct access to ${entry.label}`, async () => {
       guard.mockRejectedValue(new Error("denied"));

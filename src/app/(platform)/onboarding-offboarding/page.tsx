@@ -1,3 +1,4 @@
+import { careerScope } from "@/modules/career/access";
 import { requirePermission } from "@/modules/access/server";
 import { demoOnboarding } from "@/modules/onboarding/fixtures";
 import { type Scope } from "@/modules/onboarding/model";
@@ -18,8 +19,10 @@ export default async function Page() {
     name: access.displayName,
     key: `onboarding-v1:${access.organization.id}:${access.user.id}:${mode}`,
   };
+  const academyScope = await careerScope();
   return (
     <OnboardingWorkspace
+      academyScope={academyScope}
       key={scope.key}
       scope={scope}
       initial={demoOnboarding(scope)}

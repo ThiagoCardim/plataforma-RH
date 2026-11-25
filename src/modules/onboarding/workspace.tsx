@@ -1,4 +1,6 @@
 "use client";
+import { AcademyReferences } from "@/modules/academy/links";
+import type { Scope as AcademyScope } from "@/modules/career/model";
 import { useState } from "react";
 import {
   ArrowRight,
@@ -57,9 +59,11 @@ const stageDate = (p: Process, s: Stage) =>
 export function OnboardingWorkspace({
   initial,
   scope,
+  academyScope,
 }: {
   initial: State;
   scope: Scope;
+  academyScope?: AcademyScope;
 }) {
   const offboarding = scope.journey === "offboarding";
   const title = offboarding ? "Offboarding" : "Onboarding";
@@ -810,6 +814,13 @@ export function OnboardingWorkspace({
             </div>
             <Badge>{pending(process)} obrigatórias pendentes</Badge>
           </div>
+          {!offboarding && academyScope && (
+            <AcademyReferences
+              scope={academyScope}
+              kind="onboarding"
+              target={process.id}
+            />
+          )}
           {rh && (
             <div className="mb-5 grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2">
               <label className="text-xs">

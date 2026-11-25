@@ -1,4 +1,5 @@
 "use client";
+import { AcademyReferences } from "@/modules/academy/links";
 import { EvaluationReferences } from "@/modules/development-links/references";
 import { useState } from "react";
 import {
@@ -450,6 +451,7 @@ export function PdiWorkspace({
           {messages}
           <div className="space-y-5">
             <EvaluationReferences scope={scope} target="pdi" targetId={p.id} />
+            <AcademyReferences scope={scope} kind="pdi" target={p.id} />
             <header className="flex flex-wrap justify-between gap-3">
               <div>
                 <Badge>

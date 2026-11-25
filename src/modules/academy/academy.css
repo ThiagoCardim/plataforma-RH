@@ -1,0 +1,30 @@
+.academy-carousel {
+  scroll-snap-type: x proximity;
+}
+.academy-carousel > * {
+  scroll-snap-align: start;
+}
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  .academy-certificate,
+  .academy-certificate * {
+    visibility: visible !important;
+  }
+  .academy-certificate {
+    position: fixed;
+    inset: 20px;
+    overflow: visible;
+    background: #fcfaf5 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .academy-shell button {
+    transition: none !important;
+    transform: none !important;
+    scroll-behavior: auto !important;
+  }
+}

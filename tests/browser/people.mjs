@@ -185,6 +185,7 @@ try {
           "/onboarding-offboarding",
           "/home-office",
           "/hall-de-destaques",
+          "/youcon-academy",
           ...(role === "leadership" ? ["/offboarding", "/pdi"] : []),
         ].includes(r),
     )) {
@@ -508,6 +509,7 @@ try {
           "hall-de-destaques",
           "avaliacao-de-desempenho",
           "metas-dos-lideres",
+          "youcon-academy",
         ].includes(slug)
       )
         await page.getByText("Em preparação", { exact: true }).waitFor();

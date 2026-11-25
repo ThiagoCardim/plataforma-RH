@@ -1,4 +1,5 @@
 "use client";
+import { AcademyReferences } from "@/modules/academy/links";
 import Link from "next/link";
 import { useState } from "react";
 import {
@@ -1591,6 +1592,7 @@ function EvaluationDetail({
             Conectar ao PDI ou reconhecimento
           </Button>
         )}
+      <AcademyReferences scope={scope} kind="performance" target={e.id} />
       <details className="rounded-xl border p-4">
         <summary className="cursor-pointer text-sm font-semibold">
           Histórico desta avaliação

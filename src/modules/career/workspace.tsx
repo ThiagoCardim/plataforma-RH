@@ -1,4 +1,5 @@
 "use client";
+import { AcademyReferences } from "@/modules/academy/links";
 import { EvaluationReferences } from "@/modules/development-links/references";
 import Link from "next/link";
 import { useState } from "react";
@@ -1252,6 +1253,7 @@ export function CareerWorkspace({
           close={() => setSelectedRole(null)}
         >
           <RoleDetails role={role} />
+          <AcademyReferences scope={scope} kind="career" target={role.id} />
           {management && (
             <Button
               className="mt-5"

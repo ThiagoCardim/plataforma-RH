@@ -104,6 +104,11 @@ export function Navigation({
                 label: "Hall de Destaques",
                 icon: "trophy" as const,
               },
+              {
+                href: "/youcon-academy",
+                label: "YouCon Academy",
+                icon: "academy" as const,
+              },
               ...(pdi
                 ? [{ href: "/pdi", label: "PDI", icon: "career" as const }]
                 : []),
