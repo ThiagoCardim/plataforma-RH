@@ -9,7 +9,8 @@ import { FileCard } from "../documents/file-card";
 import { saveAdmission } from "./workflow-model";
 import { CandidateForm } from "./forms";
 import { Notice } from "../performance/components";
-import { submitIntake, submitAdmissionInfo } from "./workflow-model";
+import { submitResumeIntake } from "./resume-model";
+import { submitAdmissionInfo } from "./workflow-model";
 import "./recruitment.css";
 export function IntakePage({
   initial,
@@ -60,7 +61,7 @@ export function IntakePage({
           <p className="mt-4 text-sm">
             {admission
               ? "Informações vinculadas à admissão original."
-              : "Currículo incluído em Entrada, sem seleção de vaga. Se já existia um processo ativo com o mesmo e-mail, ele foi preservado sem duplicidade."}{" "}
+              : "Currículo recebido sem seleção de vaga. Novos cadastros entram em Entrada; possíveis duplicidades ficam pendentes da revisão do RH, sem unificação automática."}{" "}
             Dados apenas neste navegador e conta; nenhum envio externo.
           </p>
           <Link
@@ -101,7 +102,7 @@ export function IntakePage({
               const result = local.act((s) =>
                 admission && x
                   ? submitAdmissionInfo(s, scope, x.id, x.token, answers, files)
-                  : submitIntake(s, scope, answers, files, consent),
+                  : submitResumeIntake(s, scope, answers, files, consent),
               );
               if (result) setSent(true);
             }}

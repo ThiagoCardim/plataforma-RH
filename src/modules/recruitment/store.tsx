@@ -3,10 +3,17 @@ import { useState } from "react";
 import { type Scope } from "../career/model";
 import { useLocalDemo } from "../local-demo/use-local-demo";
 import { type State } from "./model";
-import { projectWorkflow } from "./workflow-model";
+import {
+  projectResumeDatabase,
+  recordResumeChanges,
+  runArchiveRules,
+} from "./resume-model";
 export function useRecruitment(initial: State, scope: Scope) {
-  const local = useLocalDemo(`recruitment-v1:${scope.key}`, initial, (s) =>
-      projectWorkflow(s, scope),
+  const [seed] = useState(() => projectResumeDatabase(initial, scope));
+  const local = useLocalDemo(`recruitment-v1:${scope.key}`, seed, (s) =>
+      scope.rh
+        ? runArchiveRules(projectResumeDatabase(s, scope), scope)
+        : projectResumeDatabase(s, scope),
     ),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
@@ -15,10 +22,16 @@ export function useRecruitment(initial: State, scope: Scope) {
     text = "Simulação salva somente neste navegador.",
   ) {
     try {
-      const next = fn(local.value);
+      const result = recordResumeChanges(local.value, fn(local.value), scope);
+      const next = scope.rh ? runArchiveRules(result, scope) : result;
       local.setValue(next);
       setError("");
-      setNotice(text);
+      setNotice(
+        (next.duplicateReviews?.length ?? 0) >
+          (local.value.duplicateReviews?.length ?? 0)
+          ? "Possível duplicidade recebida. Revise no Banco de Currículos; nenhum cadastro foi unificado automaticamente."
+          : text,
+      );
       return next;
     } catch (e) {
       setError((e as Error).message);

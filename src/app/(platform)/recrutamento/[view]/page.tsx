@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { recruitmentWorkflowScope } from "@/modules/recruitment/access";
-import { demoWorkflow } from "@/modules/recruitment/workflow-fixtures";
+import { demoResumeDatabase } from "@/modules/recruitment/resume-fixtures";
 import { OperationalWorkspace } from "@/modules/recruitment/operational-workspace";
 import {
   workflowViews,
@@ -38,7 +38,7 @@ export default async function Page({
     <OperationalWorkspace
       key={scope.key + view + q.assessment}
       scope={scope}
-      initial={demoWorkflow(scope)}
+      initial={demoResumeDatabase(scope)}
       view={view as WorkflowView}
       assessment={q.assessment}
       assessmentToken={q.token}

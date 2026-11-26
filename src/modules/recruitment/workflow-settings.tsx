@@ -97,7 +97,6 @@ function StageEditor({
                   ["normal", "Etapa livre"],
                   ["qualified", "Qualificados"],
                   ["hired", "Aprovado para contratar"],
-                  ["bank", "Banco selecionado"],
                   ["disqualified", "Desqualificados"],
                   ["rejected", "Reprovados"],
                   ["declined", "Proposta recusada"],

@@ -5,7 +5,7 @@ export const workflowViews = [
   ["processo-seletivo", "Processo Seletivo"],
   ["vagas", "Gestão de Vagas"],
   ["admissao", "Admissão Digital"],
-  ["talentos", "Banco de Talentos"],
+  ["talentos", "Banco de Currículos"],
   ["indicadores", "Indicadores"],
   ["configuracoes", "Configurações"],
 ] as const;
@@ -109,6 +109,8 @@ export type Relationship = {
   text: string;
 };
 export type WorkflowFilters = {
+  archived?: "" | "include" | "only";
+  freshness?: string;
   search: string;
   area: string;
   sector: string;

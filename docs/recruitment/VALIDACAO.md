@@ -1,5 +1,7 @@
 # Validação — Recrutamento centralizado
 
+Relatório da rodada estrutural anterior. A validação vigente do Banco de Currículos está em [VALIDACAO_CURRICULOS.md](VALIDACAO_CURRICULOS.md): 368 testes e cinco suítes de interface, com o novo cadastro centralizado.
+
 Data: 26/11/2026. Continuidade de `4701d9b`, branch `feat/recruitment-central-workflow`.
 
 ## Ambiente

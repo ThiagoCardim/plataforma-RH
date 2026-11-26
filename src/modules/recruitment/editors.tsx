@@ -632,7 +632,7 @@ export function CandidateEditor({
     </div>
   );
 }
-export function newCandidate(): Candidate {
+export function newCandidate(retentionDays = 180): Candidate {
   return {
     id: uid(),
     name: "",
@@ -651,7 +651,11 @@ export function newCandidate(): Candidate {
     referral: "",
     tags: [],
     created: dateNow(),
-    retentionUntil: dateNow(),
+    retentionUntil: new Date(
+      Date.parse(dateNow() + "T12:00:00Z") + retentionDays * 86400000,
+    )
+      .toISOString()
+      .slice(0, 10),
     consent: "Uso de dados fictícios nesta demonstração local.",
     summary: "",
     claims: [],

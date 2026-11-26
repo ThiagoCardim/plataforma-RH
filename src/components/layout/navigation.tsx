@@ -139,7 +139,7 @@ export function Navigation({
                 ["processo-seletivo", "Processo Seletivo", "dashboard"],
                 ["vagas", "Gestão de Vagas", "referrals"],
                 ["admissao", "Admissão Digital", "journey"],
-                ["talentos", "Banco de Talentos", "people"],
+                ["talentos", "Banco de Currículos", "people"],
                 ["indicadores", "Indicadores", "goals"],
                 ["configuracoes", "Configurações", "policies"],
               ] as const

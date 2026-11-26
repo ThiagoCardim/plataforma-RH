@@ -383,11 +383,14 @@ export function projectWorkflow(input: State, c: Scope): State {
     relationships: [],
   };
 }
-export const currentCycles = (s: State) =>
+export const currentCycles = (s: State, includeArchived = false) =>
   s.applications.filter(
     (a) =>
-      !a.historical &&
-      s.candidates.some((p) => p.id === a.candidate && !p.erased),
+      (!a.historical || (includeArchived && !!a.archived)) &&
+      (includeArchived || !a.archived) &&
+      s.candidates.some(
+        (p) => p.id === a.candidate && !p.erased && !p.mergedInto,
+      ),
   );
 export const stageOf = (s: State, id: string) =>
   s.central!.stages.find((st) => st.id === id);
@@ -646,6 +649,10 @@ export function moveCentral(
     const a = next.applications.find((a) => a.id === id && !a.historical),
       p = next.candidates.find((p) => p.id === a?.candidate && !p.erased);
     assert(a && p, "Processo atual indisponível.");
+    assert(
+      !a.archived,
+      "Reative o processo arquivado para uma nova oportunidade.",
+    );
     if (a.stage === target) continue;
     if (a.status === "Contratada")
       throw new Error(
@@ -663,6 +670,7 @@ export function moveCentral(
         : [...a.stages, structuredClone(st)],
       entered: dateNow(),
       status: closed ? "Encerrada" : "Ativa",
+      closedAt: closed ? now() : undefined,
       reason,
       fromBank: a.fromBank || fromBank,
       decision: st.kind === "hired" ? "Aprovado RH" : a.decision,
@@ -717,8 +725,16 @@ export function reactivateCycle(
     !s.employments!.some((e) => e.candidate === p.id && e.status === "Ativo"),
     "Profissional com vínculo local ativo; recontratação depende do Offboarding confirmado.",
   );
+  assert(
+    !currentCycles(s).some(
+      (other) =>
+        other.candidate === p.id && other.id !== id && other.status === "Ativa",
+    ),
+    "Já existe outro processo operacional ativo para esta pessoa.",
+  );
   if (
     !a.historical &&
+    !a.archived &&
     !s.admissions!.some(
       (x) => x.application === a.id && x.state === "Cancelada",
     ) &&
@@ -871,10 +887,11 @@ export function selectProcesses(
 ) {
   const includes = (value: string, q: string) =>
     !q || normalized(value).includes(normalized(q));
-  return currentCycles(s).filter((a) => {
+  return currentCycles(s, !!filters.archived).filter((a) => {
     const p = s.candidates.find((p) => p.id === a.candidate)!;
     return (
       (!bank || stageOf(s, a.stage)?.kind === "bank") &&
+      (!filters.archived || filters.archived !== "only" || !!a.archived) &&
       includes(
         [p.name, p.email, p.phone, ...p.tags].join(" "),
         filters.search,
@@ -921,7 +938,15 @@ export function savePipeline(
     ),
     "Etapa ocupada não pode ser removida; mova os cards primeiro.",
   );
-  for (const kind of ["entry", "hired", "bank", "declined"] as const)
+  assert(
+    !s.resumeVersion || !central.stages.some((st) => st.kind === "bank"),
+    "Talento é uma classificação independente; use a estrela, sem coluna Banco de Talentos.",
+  );
+  for (const kind of (s.resumeVersion
+    ? ["entry", "hired", "declined"]
+    : ["entry", "hired", "bank", "declined"]) as (
+    "entry" | "hired" | "bank" | "declined"
+  )[])
     assert(
       central.stages.filter((st) => st.kind === kind).length === 1,
       `Mantenha uma etapa com função ${kind}.`,
@@ -1270,7 +1295,9 @@ export function finalizeAdmission(
         : ad,
     ),
     applications: s.applications.map((ap) =>
-      ap.id === a.id ? { ...ap, status: "Contratada", hiredAt: dateNow() } : ap,
+      ap.id === a.id
+        ? { ...ap, status: "Contratada", closedAt: stamp, hiredAt: dateNow() }
+        : ap,
     ),
     employments: [
       ...s.employments!,

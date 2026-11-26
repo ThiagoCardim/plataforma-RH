@@ -41,11 +41,9 @@ import {
   selectProcesses,
   moveCentral,
   reactivateCycle,
-  intakeCandidate,
   attachVacancy,
   validateExperience,
   rehireEligibility,
-  submitIntake,
   saveWorkflowQuery,
 } from "./workflow-model";
 import { daysBetween } from "./workflow-insights";
@@ -63,6 +61,15 @@ import { AdmissionBoard } from "./admission-board";
 import { VacancyDesk } from "./vacancy-desk";
 import { InsightsDesk } from "./insights-desk";
 import { WorkflowSettings } from "./workflow-settings";
+import { ResumeDatabase } from "./resume-database";
+import { ResumeDetails } from "./resume-details";
+import { TalentStar } from "./resume-components";
+import {
+  registerResume,
+  submitResumeIntake,
+  eligibleResumes,
+  archiveProcesses,
+} from "./resume-model";
 import "./recruitment.css";
 export function OperationalWorkspace({
   initial,
@@ -98,11 +105,11 @@ export function OperationalWorkspace({
         )
       : undefined;
   const opened = candidate ?? queryAssessment?.candidate;
-  const props = { state, scope, act },
+  const props = { state, scope, act, error: local.error, notice: local.notice },
     bank = view === "talentos",
-    process = ["processo-seletivo", "talentos"].includes(view),
-    apps = selectProcesses(state, filters, bank);
-  const selectedApps = currentCycles(state).filter((a) =>
+    process = view === "processo-seletivo",
+    apps = selectProcesses(state, filters, false);
+  const selectedApps = state.applications.filter((a) =>
       selected.includes(a.id),
     ),
     selectedPeople = selectedApps.length
@@ -155,6 +162,7 @@ export function OperationalWorkspace({
           ) : (
             <Badge>{a.contract}</Badge>
           )}
+          {scope.rh && <TalentStar {...props} candidate={p} />}
           <GripVertical size={13} className="text-muted-foreground" />
         </div>
         <button
@@ -280,7 +288,7 @@ export function OperationalWorkspace({
               <>
                 <Button
                   onClick={() => {
-                    setEdit(newCandidate());
+                    setEdit(newCandidate(state.privacy.days));
                     setModal("create");
                   }}
                 >
@@ -405,6 +413,22 @@ export function OperationalWorkspace({
                 </div>
               )}
 
+              <Pick
+                label="Processos arquivados"
+                value={filters.archived ?? ""}
+                options={[
+                  { id: "", name: "Ocultar arquivados" },
+                  { id: "include", name: "Incluir arquivados" },
+                  { id: "only", name: "Somente arquivados" },
+                ]}
+                onChange={(v) => {
+                  setFilters({
+                    ...filters,
+                    archived: v as "" | "include" | "only",
+                  });
+                  if (v) setMode("Tabela");
+                }}
+              />
               <Button
                 variant="ghost"
                 onClick={() => setFilters(clearWorkflowFilters())}
@@ -443,6 +467,15 @@ export function OperationalWorkspace({
                 }}
               >
                 Reativar selecionados
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setModal("archive");
+                  setReason("");
+                }}
+              >
+                Arquivar processos encerrados
               </Button>
               <Button variant="ghost" onClick={() => setSelected([])}>
                 Limpar seleção
@@ -498,7 +531,11 @@ export function OperationalWorkspace({
                           {a.sector} · {a.contract}
                         </td>
                         <td className="max-w-48 text-xs">{p.experience}</td>
-                        <td>{stageOf(state, a.stage)?.name}</td>
+                        <td>
+                          {stageOf(state, a.stage)?.name ??
+                            a.stages.find((st) => st.id === a.stage)?.name}
+                          {a.archived && <Badge>Arquivado</Badge>}
+                        </td>
                         <td>{a.jobTitle}</td>
                         <td>{daysBetween(a.created)} dias</td>
                       </tr>
@@ -558,13 +595,25 @@ export function OperationalWorkspace({
           )}
         </>
       )}
+      {view === "talentos" && (
+        <ResumeDatabase
+          {...props}
+          open={open}
+          create={() => {
+            setEdit(newCandidate(state.privacy.days));
+            setModal("create");
+          }}
+        />
+      )}
       {view === "vagas" && <VacancyDesk {...props} />}
       {view === "admissao" && <AdmissionBoard {...props} />}
       {view === "indicadores" && <InsightsDesk {...props} />}
       {view === "configuracoes" && <WorkflowSettings {...props} />}
       {opened && (
         <SideSheet title="Ficha do candidato" close={close}>
+          <Notice error={local.error} notice={local.notice} />
           <div className="space-y-6">
+            {scope.rh && <ResumeDetails {...props} id={opened} />}
             {scope.rh && (
               <CandidateOperations
                 {...props}
@@ -600,13 +649,7 @@ export function OperationalWorkspace({
           <CandidateEditor
             initial={edit}
             save={(p) => {
-              if (
-                act((s) =>
-                  modal === "create"
-                    ? intakeCandidate(s, scope, p)
-                    : saveCandidate(s, scope, p),
-                )
-              ) {
+              if (act((s) => registerResume(s, scope, p, modal === "create"))) {
                 setEdit(undefined);
                 setModal("");
               }
@@ -653,7 +696,7 @@ export function OperationalWorkspace({
               form={state.forms.find((f) => f.id === state.central!.formId)!}
               submit={(answers, files, consent) => {
                 const next = act((s) =>
-                  submitIntake(s, scope, answers, files, consent),
+                  submitResumeIntake(s, scope, answers, files, consent),
                 );
                 if (next) setModal("");
               }}
@@ -663,7 +706,14 @@ export function OperationalWorkspace({
       )}
       {modal === "match" && (
         <SideSheet title="YouCon Match · análise de evidências" close={close}>
-          <MatchDesk {...props} candidates={selectedPeople} />
+          <MatchDesk
+            {...props}
+            candidates={
+              selected.length
+                ? selectedPeople
+                : eligibleResumes(state).map((p) => p.id)
+            }
+          />
         </SideSheet>
       )}
       {["move", "reactivate"].includes(modal) && (
@@ -715,6 +765,34 @@ export function OperationalWorkspace({
               }}
             >
               Confirmar movimentação
+            </Button>
+          </div>
+        </SideSheet>
+      )}
+      {modal === "archive" && (
+        <SideSheet
+          title="Arquiver processos encerrados"
+          close={() => setModal("")}
+        >
+          <div className="space-y-4">
+            <p className="text-sm">
+              Arquivar remove os cards do quadro operacional e preserva cadastro
+              e histórico. Não encerra vínculos ou admissões.
+            </p>
+            <AreaField
+              label="Motivo do arquivamento"
+              value={reason}
+              onChange={setReason}
+            />
+            <Button
+              onClick={() => {
+                if (act((s) => archiveProcesses(s, scope, selected, reason))) {
+                  setSelected([]);
+                  setModal("");
+                }
+              }}
+            >
+              Confirmar arquivamento local
             </Button>
           </div>
         </SideSheet>

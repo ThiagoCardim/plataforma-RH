@@ -1,6 +1,6 @@
-# Recrutamento e Seleção — processo centralizado (demonstração local)
+# Recrutamento e Seleção — processo e Banco de Currículos locais
 
-Continuidade do módulo existente (`4701d9b`), sem reiniciar os cadastros. Branch `feat/recruitment-central-workflow`. Nenhuma migração ou escrita no Supabase, alteração de Auth/RLS/grants/Storage, integração externa, merge ou produção.
+Continuidade dos módulos existentes (`d34c3db` e política de homologação `17b6f0d`), sem reiniciar os cadastros. Branch `feat/recruitment-resume-database`. Ver [Banco de Currículos: fluxo e limites](BANCO_CURRICULOS.md) e [validação atual](VALIDACAO_CURRICULOS.md). Nenhuma migração ou escrita no Supabase, alteração de Auth/RLS/grants/Storage, integração externa, merge ou produção.
 
 ## Navegação e autorização
 
@@ -9,7 +9,7 @@ Continuidade do módulo existente (`4701d9b`), sem reiniciar os cadastros. Branc
 | Processo Seletivo (entrada principal) | `/recrutamento/processo-seletivo` | RH completo; Diretoria gerencial; liderança somente designados |
 | Gestão de Vagas | `/recrutamento/vagas` | RH; Diretoria gerencial/financeira |
 | Admissão Digital | `/recrutamento/admissao` | RH |
-| Banco de Talentos | `/recrutamento/talentos` | RH |
+| Banco de Currículos | `/recrutamento/talentos` | RH |
 | Indicadores | `/recrutamento/indicadores` | RH; Diretoria |
 | Configurações | `/recrutamento/configuracoes` | RH |
 | Formulário independente protegido | `/candidatura-demonstrativa` | RH, demonstração sem área administrativa |
@@ -18,12 +18,12 @@ A categoria tem exatamente essa ordem. Match aparece no processo e no banco. Rot
 
 ## Operação do RH
 
-- Kanban único com as 13 etapas solicitadas. Movimentação livre com motivo, por arrastar/soltar, seletor acessível ou lote. Não exige concluir todas as etapas ou seus checklists para movimentar. Etapas ocupadas não podem ser excluídas. Há modos tabela e cards, seleção múltipla e filtros combinados por área/setor/nível/cidade/formação/competências/softwares/disponibilidade/vínculo/vaga/origem/tags/etapa/período. Buscas podem ser salvas, inclusive reaproveitando as buscas anteriores.
-- Entrada independente de vaga. O formulário geral tem experiências autodeclaradas configuráveis, privacidade, cor, mensagem de confirmação, condições, descrições, ordenação e anexos locais. O reenvio do mesmo e-mail com processo ativo preserva o cadastro/processo em vez de duplicar ou sobrescrever dados. Cadastro manual sinaliza possíveis duplicidades para revisão humana.
+- Kanban único com 12 etapas operacionais. A antiga coluna Banco de Talentos foi removida com preservação dos processos no histórico/arquivamento e conversão da classificação para estrela. Movimentação livre com motivo, por arrastar/soltar, seletor acessível ou lote. Não exige concluir todas as etapas ou seus checklists para movimentar. Etapas ocupadas não podem ser excluídas. Há modos tabela e cards, seleção múltipla e filtros combinados por área/setor/nível/cidade/formação/competências/softwares/disponibilidade/vínculo/vaga/origem/tags/etapa/período. Buscas podem ser salvas, inclusive reaproveitando as buscas anteriores.
+- Entrada independente de vaga. O formulário geral tem experiências autodeclaradas configuráveis, privacidade, cor, mensagem de confirmação, condições, descrições, ordenação e anexos locais. Coincidências de nome, e-mail ou telefone criam uma revisão pendente, sem sobrescrever ou unificar automaticamente. O RH compara campos e pode unificar ou manter registros separados com justificativa.
 - Ficha lateral preserva currículo, portfólio, respostas, evidências, Match, instrumentos DISC/Temperamentos, entrevistas, testes técnicos, notas, propostas, exceções e histórico. A experiência validada pelo RH é separada da declaração original. Designações técnicas e compartilhamento explícito de CV/respostas permanecem disponíveis, exclusivamente locais.
-- Banco de Talentos é uma projeção dos processos na etapa com função **Banco**. Reprovados e desqualificados não são incluídos. Reativar o Banco preserva cadastro/ciclo e registra a proveniência; reativar uma recusa/reprovação encerrada cria outro ciclo, mantendo a negociação anterior. Um processo posterior a uma contratação preserva o ciclo anterior e cria outro identificador, sem substituir sua história.
+- Banco de Currículos reúne todos os cadastros canônicos, com ou sem processos. A estrela de talento é independente da etapa e exclusiva da gestão RH. Há visões de todos, novos, talentos, em seleção, desatualizados, propostas recusadas, ex-profissionais e arquivados, além de versões de CV, contatos, convites de atualização e importação demonstrativa. Uma nova oportunidade iniciada pelo Banco preserva os resultados anteriores em outro ciclo; processos operacionais ativos impedem reativação concorrente. Um processo posterior a uma contratação preserva o ciclo anterior e cria outro identificador, sem substituir sua história.
 - Vagas são gerenciais, sem Kanban próprio e sem conteúdo longo obrigatório. Cargo/setor/vínculo/nível/posições/motivo/datas/orçamento/custo opcional/requisitos/observações são editáveis. Há cópia, pausa, reabertura, cancelamento e encerramento. Preenchimento parcial, posições restantes e data de preenchimento integral vêm de formalizações confirmadas, nunca da coluna Contratados. Vagas integralmente preenchidas permanecem protegidas contra alterações retroativas das posições.
-- Match aceita vaga ou requisitos avulsos, critérios/pesos revisáveis, seleção individual/lote, comparação, cobertura, resumo, evidências, lacunas e perguntas. Pesquisa por linguagem natural usa correspondência simples de termos profissionais, sem serviço de IA. Não há OCR ou extração automática de currículo. Critérios pessoais irrelevantes são rejeitados pelo validador existente. Compatibilidade demonstrativa não movimenta ou seleciona candidatos.
+- Match consulta toda a base elegível (inclusive cadastros sem processo), admite filtros de disponibilidade/atualidade e priorização opcional de talentos, e aceita vaga ou requisitos avulsos, critérios/pesos revisáveis, seleção individual/lote, comparação, cobertura, resumo, evidências, lacunas e perguntas. Pesquisa por linguagem natural usa correspondência simples de termos profissionais, sem serviço de IA. Não há OCR ou extração automática de currículo. Critérios pessoais irrelevantes são rejeitados pelo validador existente. Compatibilidade demonstrativa não movimenta ou seleciona candidatos.
 
 ## Admissão e vínculo
 
@@ -45,7 +45,7 @@ Arquivamento não encerra vínculo. Depois das atividades obrigatórias, o RH co
 
 O RH edita etapas, cores, prazos, função operacional, campos condicionais, checklists, cards/tags, formulários, critérios avulsos do Match, documentação/fluxos por vínculo e modelos de entrevistas, DISC, Temperamentos, técnica, mensagens, propostas e motivos. Regras de automação podem ter escopo de etapa, setor e vínculo; registram simulação/rastreabilidade local e podem preparar rascunhos, sem envio real, decisão ou formalização automática. Instrumentos aplicados e admissões preservam snapshots; DISC e Temperamentos não recebem metodologia definitiva, diagnóstico ou uso automático na decisão.
 
-A atualização da estrutura usa a **mesma chave local**. Candidatos, notas, avaliações, propostas, respostas e anexos são conservados. Aplicações anteriores guardam `legacy` com etapa/status/vaga, definições completas de etapas e visitas originais; o processo atual é projetado no quadro central e os demais ciclos ficam históricos. Etapas personalizadas anteriores sem correspondência ficam preservadas no snapshot, com revisão humana da classificação atual. Restaurar exemplos requer confirmação e afeta apenas o Recrutamento deste escopo; não apaga cópias já autorizadas no Onboarding.
+A atualização da estrutura usa a **mesma chave local**, com `resumeVersion: 1` sobre `workflowVersion: 2`. Candidatos, notas, avaliações, propostas, respostas e anexos são conservados. Aplicações anteriores guardam `legacy` com etapa/status/vaga, definições completas de etapas e visitas originais; o processo atual é projetado no quadro central e os demais ciclos ficam históricos. Etapas personalizadas anteriores sem correspondência ficam preservadas no snapshot, com revisão humana da classificação atual. Restaurar exemplos requer confirmação e afeta apenas o Recrutamento deste escopo; não apaga cópias já autorizadas no Onboarding.
 
 ## Indicadores
 

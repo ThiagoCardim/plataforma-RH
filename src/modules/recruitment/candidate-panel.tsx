@@ -31,6 +31,7 @@ import {
   erase,
   guard,
 } from "./model";
+import { eraseResumeData } from "./resume-operations";
 import { recordDeclinedOffer, workflowErase } from "./workflow-model";
 export function CandidatePanel({
   id,
@@ -847,9 +848,11 @@ export function CandidatePanel({
                 if (
                   act(
                     (s) =>
-                      state.workflowVersion === 2
-                        ? workflowErase(s, scope, p.id, note)
-                        : erase(s, scope, p.id, note),
+                      state.resumeVersion
+                        ? eraseResumeData(s, scope, p.id, note)
+                        : state.workflowVersion === 2
+                          ? workflowErase(s, scope, p.id, note)
+                          : erase(s, scope, p.id, note),
                     "Cadastro anonimizado nesta demonstração.",
                   )
                 )

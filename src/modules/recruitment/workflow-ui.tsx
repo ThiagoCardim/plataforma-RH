@@ -7,6 +7,8 @@ import { type State } from "./model";
 import { TextField, Pick } from "../academy/components";
 import { type WorkflowFilters } from "./workflow-types";
 export type WorkflowProps = {
+  error?: string;
+  notice?: string;
   state: State;
   scope: Scope;
   act: (fn: (s: State) => State, text?: string) => State | undefined;

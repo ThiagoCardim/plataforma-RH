@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TextField, Pick, Check } from "../academy/components";
 import { type Criterion, factFields } from "./model";
+import { freshness, eligibleResumes } from "./resume-model";
+import { Freshness } from "./resume-components";
 import { uid } from "../career/model";
 import { analyzeRequirements, normalized } from "./workflow-model";
 import { type WorkflowProps, choices } from "./workflow-ui";
@@ -99,6 +101,9 @@ export function MatchDesk({
   const [job, setJob] = useState(""),
     [rows, setRows] = useState<Criterion[]>(state.central!.customCriteria),
     [query, setQuery] = useState(""),
+    [priority, setPriority] = useState(true),
+    [availability, setAvailability] = useState(""),
+    [currentOnly, setCurrentOnly] = useState(false),
     [selected, setSelected] = useState<string[]>(candidates);
   const terms = normalized(query)
     .replace(
@@ -107,23 +112,38 @@ export function MatchDesk({
     )
     .split(/\s+/)
     .filter(Boolean);
-  const people = state.candidates.filter(
-    (p) =>
-      candidates.includes(p.id) &&
-      (!terms.length ||
-        terms.every((term) =>
-          normalized(
-            [
-              p.name,
-              p.skills,
-              p.software,
-              p.education,
-              p.experience,
-              ...p.claims.map((x) => x.value),
-            ].join(" "),
-          ).includes(term),
-        )),
-  );
+  const people = (
+    state.resumeVersion ? eligibleResumes(state) : state.candidates
+  )
+    .filter(
+      (p) =>
+        candidates.includes(p.id) &&
+        (!availability || p.availabilityStatus === availability) &&
+        (!currentOnly ||
+          !state.resumeVersion ||
+          freshness(p, state.resumeConfig!).level <= 1) &&
+        (!terms.length ||
+          terms.every((term) =>
+            normalized(
+              [
+                p.name,
+                p.skills,
+                p.software,
+                p.education,
+                p.experience,
+                ...p.claims.map((x) => x.value),
+              ].join(" "),
+            ).includes(term),
+          )),
+    )
+    .sort((a, b) =>
+      priority
+        ? Number(!!b.talent) - Number(!!a.talent) ||
+          (b.resumeUpdated ?? b.created).localeCompare(
+            a.resumeUpdated ?? a.created,
+          )
+        : 0,
+    );
   return (
     <div className="space-y-5">
       <p className="rounded-xl bg-accent p-4 text-sm">
@@ -154,6 +174,30 @@ export function MatchDesk({
           ...state.jobs.map((j) => ({ id: j.id, name: j.title })),
         ]}
       />
+      <div className="flex flex-wrap items-end gap-4">
+        <Check
+          label="Priorizar talentos selecionados"
+          checked={priority}
+          onChange={setPriority}
+        />
+        <Check
+          label="Somente informações atualizadas ou regulares"
+          checked={currentOnly}
+          onChange={setCurrentOnly}
+        />
+        <Pick
+          label="Disponibilidade na pesquisa Match"
+          value={availability}
+          options={choices([
+            "",
+            "Disponível para oportunidades",
+            "Empregado, mas aberto a propostas",
+            "Não respondeu ao contato",
+            "Disponibilidade desconhecida",
+          ])}
+          onChange={setAvailability}
+        />
+      </div>
       <CriteriaEditor rows={rows} change={setRows} />
       <div className="flex flex-wrap gap-3">
         {people.map((p) => (
@@ -174,7 +218,15 @@ export function MatchDesk({
       <Button
         disabled={!selected.length}
         onClick={() =>
-          act((s) => analyzeRequirements(s, scope, selected, rows, job))
+          act((s) =>
+            analyzeRequirements(
+              s,
+              scope,
+              selected.filter((id) => people.some((p) => p.id === id)),
+              rows,
+              job,
+            ),
+          )
         }
       >
         Analisar e comparar selecionados
@@ -186,7 +238,18 @@ export function MatchDesk({
             const a = state.analyses.find((a) => a.candidate === p.id);
             return (
               <article key={p.id} className="space-y-3 rounded-xl border p-4">
-                <h3 className="font-semibold">{p.name}</h3>
+                <h3 className="font-semibold">
+                  {p.name} {p.talent ? "★" : ""}
+                </h3>
+                {state.resumeVersion && (
+                  <>
+                    <Freshness state={state} candidate={p} />
+                    <p className="text-xs text-muted-foreground">
+                      {p.availabilityStatus} · currículo{" "}
+                      {p.resumeUpdated ?? p.created}
+                    </p>
+                  </>
+                )}
                 {a ? (
                   <>
                     <p className="text-sm">

@@ -1,4 +1,13 @@
 import type {
+  AvailabilityStatus,
+  ResumeConfig,
+  ResumeRevision,
+  Contact,
+  UpdateRequest,
+  DuplicateReview,
+  ImportReport,
+} from "./resume-types";
+import type {
   CentralConfig,
   Admission,
   Employment,
@@ -135,6 +144,11 @@ export type Candidate = {
   summary: string;
   claims: Claim[];
   erased?: boolean;
+  talent?: boolean;
+  resumeUpdated?: string;
+  lastContact?: string;
+  availabilityStatus?: AvailabilityStatus;
+  mergedInto?: string;
   validatedLevel?: string;
   rehire?: {
     eligible: "A revisar" | "Elegível" | "Não elegível";
@@ -169,6 +183,8 @@ export type Application = {
   reason?: string;
   events: Event[];
   hiredAt?: string;
+  closedAt?: string;
+  archived?: { at: string; by: string; reason: string; automatic: boolean };
   cycle?: number;
   historical?: boolean;
   fromBank?: boolean;
@@ -327,6 +343,13 @@ export type Handoff = {
 };
 export type State = {
   version: 1;
+  resumeVersion?: 1;
+  resumeConfig?: ResumeConfig;
+  resumeHistory?: ResumeRevision[];
+  resumeContacts?: Contact[];
+  resumeRequests?: UpdateRequest[];
+  duplicateReviews?: DuplicateReview[];
+  importReports?: ImportReport[];
   workflowVersion?: 2;
   workflowQueries?: {
     id: string;

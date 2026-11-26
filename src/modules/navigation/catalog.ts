@@ -108,7 +108,7 @@ export function routeLabel(pathname: string) {
           configuracoes: "Configurações",
           "visao-geral": "Recrutamento · Visão Geral",
           vagas: "Gestão de Vagas",
-          talentos: "Banco de Talentos",
+          talentos: "Banco de Currículos",
           match: "YouCon Match",
           modelos: "Modelos e Avaliações",
           carreiras: "Página de Carreiras",

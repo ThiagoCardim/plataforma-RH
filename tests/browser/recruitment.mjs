@@ -245,17 +245,15 @@ try {
     await p
       .getByRole("region", { name: "Kanban central de candidatos" })
       .waitFor();
-    assert.equal(await p.locator(".ats-column").count(), 13);
+    assert.equal(await p.locator(".ats-column").count(), 12);
     await shot(p, "central-kanban");
     const dragCard = p
       .locator("article.ats-card")
       .filter({ has: p.getByRole("button", { name: /^Alex Demo/ }) });
     await dragCard.dragTo(
-      p
-        .locator(".ats-column")
-        .filter({
-          has: p.getByRole("heading", { name: "Triagem", exact: true }),
-        }),
+      p.locator(".ats-column").filter({
+        has: p.getByRole("heading", { name: "Triagem", exact: true }),
+      }),
     );
     await dialog(p)
       .getByLabel("Motivo da movimentação")
@@ -304,24 +302,39 @@ try {
     assert.equal(a.job, "");
     assert.equal(a.stage, "pipeline-0");
     await moveCard(p, "Pessoa Central Fictícia", "pipeline-6");
-    await moveCard(p, "Pessoa Central Fictícia", "pipeline-9");
-    await route(p, "talentos", "Banco de Talentos");
-    await p.getByRole("button", { name: /^Pessoa Central Fictícia/ }).waitFor();
+    await p
+      .getByRole("button", {
+        name: "Marcar talento Pessoa Central Fictícia",
+        exact: true,
+      })
+      .click();
+    await moveCard(p, "Pessoa Central Fictícia", "pipeline-11");
     await p
       .getByLabel("Selecionar Pessoa Central Fictícia", { exact: true })
       .check();
-    await tab(p, "Reativar selecionados");
+    await tab(p, "Arquivar processos encerrados");
     await dialog(p)
-      .getByLabel("Motivo da movimentação")
-      .fill("Nova oportunidade fictícia.");
+      .getByLabel("Motivo do arquivamento")
+      .fill("Resultado preservado, processo arquivado.");
     await dialog(p)
-      .getByRole("button", { name: "Confirmar movimentação" })
+      .getByRole("button", { name: "Confirmar arquivamento local" })
       .click();
     await dialog(p).waitFor({ state: "detached" });
-    assert.equal(
-      await p.getByRole("button", { name: /^Pessoa Central Fictícia/ }).count(),
-      0,
-    );
+    await route(p, "talentos", "Banco de Currículos");
+    await p
+      .getByLabel(
+        "Selecionar currículo Pessoa Central Fictícia · central-ficticia@exemplo.invalid",
+        { exact: true },
+      )
+      .check();
+    await tab(p, "Nova oportunidade");
+    await dialog(p)
+      .getByLabel("Motivo da nova oportunidade")
+      .fill("Nova oportunidade fictícia.");
+    await dialog(p)
+      .getByRole("button", { name: "Iniciar novos processos revisados" })
+      .click();
+    await dialog(p).waitFor({ state: "detached" });
     await route(p, "processo-seletivo", "Processo Seletivo");
     await p.getByRole("button", { name: /^Pessoa Central Fictícia/ }).click();
     await dialog(p)
@@ -412,6 +425,23 @@ try {
       ["Bia Exemplo", "PJ"],
       ["Caio Teste", "Estágio"],
     ]) {
+      if (name === "Bia Exemplo") {
+        await route(p, "talentos", "Banco de Currículos");
+        await p
+          .getByLabel(
+            "Selecionar currículo Bia Exemplo · talento-1@exemplo.invalid",
+            { exact: true },
+          )
+          .check();
+        await tab(p, "Nova oportunidade");
+        await dialog(p)
+          .getByLabel("Motivo da nova oportunidade")
+          .fill("Reativação de currículo selecionado para oportunidade PJ.");
+        await dialog(p)
+          .getByRole("button", { name: "Iniciar novos processos revisados" })
+          .click();
+        await dialog(p).waitFor({ state: "detached" });
+      }
       await route(p, "processo-seletivo", "Processo Seletivo");
       await p.getByRole("button", { name: new RegExp("^" + name) }).click();
       await dialog(p).getByLabel("Vaga vinculada opcional").selectOption("");
