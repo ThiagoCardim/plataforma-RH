@@ -84,7 +84,7 @@ export function baseStages(): Stage[] {
     ],
   }));
 }
-export function demoRecruitment(c: Scope): State {
+export function recruitmentFixture(c: Scope): State {
   const today = dateNow(),
     form = baseForm();
   const jobs: Job[] = [
@@ -411,5 +411,7 @@ export function demoRecruitment(c: Scope): State {
     analyses: [],
     events: [],
   };
-  return projection(s, c);
+  return s;
 }
+
+export function demoRecruitment(c:Scope):State{return projection(recruitmentFixture(c),c);}

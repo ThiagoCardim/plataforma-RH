@@ -31,6 +31,7 @@ import {
   erase,
   guard,
 } from "./model";
+import { recordDeclinedOffer, workflowErase } from "./workflow-model";
 export function CandidatePanel({
   id,
   state,
@@ -95,7 +96,7 @@ export function CandidatePanel({
           scope.rh
             ? [
                 "Resumo",
-                "Candidaturas",
+                ...(state.workflowVersion === 2 ? [] : ["Candidaturas"]),
                 "Entrevistas",
                 "Técnica e pareceres",
                 "DISC e Temperamentos",
@@ -671,11 +672,18 @@ export function CandidatePanel({
                         >
                           Registrar aceite demonstrativo
                         </Button>
+                        <AreaField
+                          label="Motivo da recusa"
+                          value={note}
+                          onChange={setNote}
+                        />
                         <Button
                           variant="outline"
                           onClick={() =>
                             act((s) =>
-                              offerState(s, scope, offer.id, "Recusada"),
+                              state.workflowVersion === 2
+                                ? recordDeclinedOffer(s, scope, offer.id, note)
+                                : offerState(s, scope, offer.id, "Recusada"),
                             )
                           }
                         >
@@ -712,25 +720,34 @@ export function CandidatePanel({
                   <Events events={offer.events} />
                 </section>
               )}
-              <section className="space-y-4 rounded-xl border p-5">
-                <Check
-                  label="Confirmo formalização exclusivamente fictícia desta contratação"
-                  checked={confirmed}
-                  onChange={setConfirmed}
-                />
-                <Button
-                  onClick={() =>
-                    act((s) => formalize(s, scope, a.id, confirmed))
-                  }
+              {state.workflowVersion === 2 ? (
+                <Link
+                  className="text-primary underline"
+                  href="/recrutamento/admissao"
                 >
-                  Confirmar contratação local
-                </Button>
-                <p className="text-xs leading-6 text-muted-foreground">
-                  Exige decisão RH, proposta aceita, posição disponível e
-                  orçamento autorizado. Não cria vínculo, pessoa, conta ou
-                  admissão real.
-                </p>
-              </section>
+                  Formalizar pela Admissão Digital
+                </Link>
+              ) : (
+                <section className="space-y-4 rounded-xl border p-5">
+                  <Check
+                    label="Confirmo formalização exclusivamente fictícia desta contratação"
+                    checked={confirmed}
+                    onChange={setConfirmed}
+                  />
+                  <Button
+                    onClick={() =>
+                      act((s) => formalize(s, scope, a.id, confirmed))
+                    }
+                  >
+                    Confirmar contratação local
+                  </Button>
+                  <p className="text-xs leading-6 text-muted-foreground">
+                    Exige decisão RH, proposta aceita, posição disponível e
+                    orçamento autorizado. Não cria vínculo, pessoa, conta ou
+                    admissão real.
+                  </p>
+                </section>
+              )}
               {a.status === "Contratada" && (
                 <section className="space-y-4 rounded-xl border p-5">
                   <h4 className="font-semibold">
@@ -829,7 +846,10 @@ export function CandidatePanel({
               ) {
                 if (
                   act(
-                    (s) => erase(s, scope, p.id, note),
+                    (s) =>
+                      state.workflowVersion === 2
+                        ? workflowErase(s, scope, p.id, note)
+                        : erase(s, scope, p.id, note),
                     "Cadastro anonimizado nesta demonstração.",
                   )
                 )

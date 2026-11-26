@@ -2,10 +2,11 @@
 import { useState } from "react";
 import { type Scope } from "../career/model";
 import { useLocalDemo } from "../local-demo/use-local-demo";
-import { type State, projection } from "./model";
+import { type State } from "./model";
+import { projectWorkflow } from "./workflow-model";
 export function useRecruitment(initial: State, scope: Scope) {
   const local = useLocalDemo(`recruitment-v1:${scope.key}`, initial, (s) =>
-      projection(s, scope),
+      projectWorkflow(s, scope),
     ),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");

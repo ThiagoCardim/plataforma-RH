@@ -34,8 +34,11 @@ describe("Recruitment server guards and independent category", () => {
         }),
       );
       expect(html).toContain("Recrutamento");
-      expect(html).toContain('href="/recrutamento/vagas"');
-      expect(html.includes('href="/recrutamento/match"')).toBe(
+      expect(html.includes('href="/recrutamento/vagas"')).toBe(
+        recruitment !== "leader",
+      );
+      expect(html).toContain('href="/recrutamento/processo-seletivo"');
+      expect(html.includes('href="/recrutamento/configuracoes"')).toBe(
         recruitment === "hr",
       );
       expect(html).not.toContain('href="/gente-gestao"');

@@ -1,4 +1,6 @@
 "use client";
+import { RecruitmentOffboarding } from "@/modules/recruitment/offboarding-bridge";
+import { type State as RecruitmentState } from "@/modules/recruitment/model";
 import { RecruitmentAdmissions } from "@/modules/recruitment/handoff";
 import { OnboardingCulture } from "@/modules/culture/manual";
 import type { CultureState } from "@/modules/culture/model";
@@ -64,11 +66,13 @@ export function OnboardingWorkspace({
   scope,
   academyScope,
   initialCulture,
+  initialRecruitment,
 }: {
   initial: State;
   scope: Scope;
   academyScope?: AcademyScope;
   initialCulture?: CultureState;
+  initialRecruitment?: RecruitmentState;
 }) {
   const offboarding = scope.journey === "offboarding";
   const title = offboarding ? "Offboarding" : "Onboarding";
@@ -354,6 +358,14 @@ export function OnboardingWorkspace({
       <p className="text-xs text-emerald-800" role="status">
         {notice}
       </p>
+      {offboarding && academyScope?.rh && initialRecruitment && (
+        <RecruitmentOffboarding
+          initial={initialRecruitment}
+          scope={academyScope}
+          target={state}
+          change={set}
+        />
+      )}
       {!offboarding && academyScope?.rh && (
         <RecruitmentAdmissions
           scope={academyScope}

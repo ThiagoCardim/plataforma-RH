@@ -102,6 +102,10 @@ export function routeLabel(pathname: string) {
     return (
       (
         {
+          "processo-seletivo": "Processo Seletivo",
+          admissao: "Admissão Digital",
+          indicadores: "Indicadores",
+          configuracoes: "Configurações",
           "visao-geral": "Recrutamento · Visão Geral",
           vagas: "Gestão de Vagas",
           talentos: "Banco de Talentos",

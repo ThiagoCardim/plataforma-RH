@@ -1,3 +1,9 @@
+import type {
+  CentralConfig,
+  Admission,
+  Employment,
+  Relationship,
+} from "./workflow-types";
 import {
   type Scope,
   type Contract,
@@ -34,6 +40,7 @@ export type Field = {
   required: boolean;
   options: string[];
   mapping: string;
+  description?: string;
   condition?: { field: string; equals: string };
 };
 export type Form = {
@@ -90,6 +97,11 @@ export type Job = {
   revision: number;
   created: string;
   closed?: string;
+  cancelled?: boolean;
+  filledAt?: string;
+  desiredLevel?: string;
+  hiringReason?: "Expansão" | "Substituição";
+  observations?: string;
 };
 export type Claim = {
   id: string;
@@ -123,6 +135,13 @@ export type Candidate = {
   summary: string;
   claims: Claim[];
   erased?: boolean;
+  validatedLevel?: string;
+  rehire?: {
+    eligible: "A revisar" | "Elegível" | "Não elegível";
+    reason: string;
+    by: string;
+    at: string;
+  };
 };
 export type Event = { id: string; at: string; by: string; text: string };
 export type Application = {
@@ -150,6 +169,16 @@ export type Application = {
   reason?: string;
   events: Event[];
   hiredAt?: string;
+  cycle?: number;
+  historical?: boolean;
+  fromBank?: boolean;
+  legacy?: {
+    stage: string;
+    status: string;
+    job: string;
+    stages?: Stage[];
+    visits?: { stage: string; at: string }[];
+  };
 };
 export type Note = {
   id: string;
@@ -234,6 +263,7 @@ export const actions = [
   "Preparar admissão",
 ] as const;
 export type Rule = {
+  stage?: string;
   id: string;
   name: string;
   trigger: (typeof triggers)[number];
@@ -297,6 +327,16 @@ export type Handoff = {
 };
 export type State = {
   version: 1;
+  workflowVersion?: 2;
+  workflowQueries?: {
+    id: string;
+    name: string;
+    filters: import("./workflow-types").WorkflowFilters;
+  }[];
+  central?: CentralConfig;
+  admissions?: Admission[];
+  employments?: Employment[];
+  relationships?: Relationship[];
   org: string;
   jobs: Job[];
   candidates: Candidate[];
@@ -736,7 +776,7 @@ export function duplicates(
         norm(x.name) === norm(p.name)),
   );
 }
-function automation(
+export function automation(
   s: State,
   a: Application,
   trigger: Rule["trigger"],
@@ -746,6 +786,7 @@ function automation(
     (r) =>
       r.active &&
       r.trigger === trigger &&
+      (!r.stage || r.stage === a.stage) &&
       (!r.sector || r.sector === a.sector) &&
       (!r.contract || r.contract === a.contract),
   );
@@ -1390,6 +1431,10 @@ export function formalize(
   confirmed: boolean,
 ): State {
   guard(s, c, "hr");
+  assert(
+    s.workflowVersion !== 2,
+    "Finalize a formalização pela Admissão Digital. Contratados não ativa vínculo.",
+  );
   const a = s.applications.find((x) => x.id === application),
     o = s.offers.find((x) => x.application === application),
     j = s.jobs.find((x) => x.id === a?.job);

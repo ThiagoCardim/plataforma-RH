@@ -189,37 +189,21 @@ try {
     );
   }
   const dialog = (p) => p.getByRole("dialog");
-  async function area(p, name) {
-    await p
-      .getByRole("navigation", { name: "Áreas de Recrutamento", exact: true })
-      .getByRole("link", { name, exact: true })
-      .click();
-    await p.getByRole("heading", { name, exact: true }).waitFor();
-  }
-  async function talent(p, name = "Alex Demo") {
-    await area(p, "Banco de Talentos");
-    await p
-      .locator("article")
-      .filter({ has: p.getByRole("heading", { name, exact: true }) })
-      .getByRole("button", { name: "Abrir ficha", exact: true })
-      .click();
-  }
-  async function readDemo(p, keyPart) {
-    return p.evaluate(async (keyPart) => {
-      const db = await new Promise((resolve) => {
+  async function readDemo(p) {
+    return p.evaluate(async () => {
+      const db = await new Promise((resolve, reject) => {
         const r = indexedDB.open("youcon-demo-v1");
         r.onsuccess = () => resolve(r.result);
+        r.onerror = () => reject(r.error);
       });
-      return await new Promise((resolve) => {
-        const store = db.transaction("demos").objectStore("demos"),
+      return new Promise((resolve) => {
+        const tx = db.transaction("demos"),
+          store = tx.objectStore("demos"),
           r = store.getAllKeys();
         r.onsuccess = () => {
-          const key = r.result.find((k) => k.includes(keyPart));
-          if (!key) {
-            resolve(undefined);
-            db.close();
-            return;
-          }
+          const key = r.result.find((k) =>
+            String(k).startsWith("recruitment-v1:"),
+          );
           const q = store.get(key);
           q.onsuccess = () => {
             resolve(q.result);
@@ -227,538 +211,428 @@ try {
           };
         };
       });
-    }, keyPart);
-  }
-  console.log(
-    "Recruitment RH: navigation, dashboard, Kanban, stage constraints and vacancy editing",
-  );
-  {
-    const { ctx, page: p } = await open("hr");
-    p.on("dialog", (d) => d.accept());
-    await p
-      .getByRole("heading", { name: "Visão Geral", exact: true })
-      .waitFor();
-    await shot(p, "overview");
-    await area(p, "Gestão de Vagas");
-    await p
-      .getByRole("button", {
-        name: "Selecionar vaga Analista de Arquitetura · Demo",
-        exact: true,
-      })
-      .click();
-    const card = p.locator("article[draggable=true]").filter({
-      has: p.getByRole("heading", { name: "Alex Demo", exact: true }),
     });
-    await card.dragTo(p.locator('[data-stage="stage-1"]'), { force: true });
-    await p.waitForTimeout(250);
+  }
+  async function route(p, id, title) {
+    await p.goto(base + "/recrutamento/" + id);
+    await p.getByRole("heading", { name: title, exact: true }).waitFor();
     await p
-      .locator('[data-stage="stage-1"]')
-      .getByRole("heading", { name: "Alex Demo", exact: true })
+      .getByRole("button", { name: "Restaurar exemplos", exact: true })
       .waitFor();
-    await p
-      .getByLabel("Mover Alex Demo", { exact: true })
-      .selectOption("stage-0");
-    await p.getByRole("button", { name: "Duplicar vaga", exact: true }).click();
-    await p
-      .getByRole("button", {
-        name: "Selecionar vaga Analista de Arquitetura · Demo · cópia",
-        exact: true,
-      })
-      .waitFor();
-    await p.getByRole("button", { name: "Editar vaga", exact: true }).click();
-    await tab(p, "Etapas e campos");
-    await tab(p, "Adicionar etapa");
+  }
+  async function moveCard(p, name, value) {
+    const card = p
+      .locator("article.ats-card")
+      .filter({ has: p.getByRole("button", { name: new RegExp("^" + name) }) });
+    await card.locator("summary").click();
+    await p.getByLabel("Mover " + name, { exact: true }).selectOption(value);
     await dialog(p)
-      .getByRole("button", { name: "Salvar vaga", exact: true })
+      .getByLabel("Motivo da movimentação", { exact: true })
+      .fill("Movimentação fictícia validada no navegador.");
+    await dialog(p)
+      .getByRole("button", { name: "Confirmar movimentação", exact: true })
       .click();
-    await p
-      .locator("[data-stage]")
-      .filter({
-        has: p.getByRole("heading", { name: "Nova etapa", exact: true }),
-      })
-      .waitFor();
-    await shot(p, "kanban");
-    await tab(p, "Lista");
-    await p.getByRole("table").waitFor();
-    await tab(p, "Kanban");
-    await area(p, "Banco de Talentos");
-    await p.getByLabel("Softwares no banco", { exact: true }).fill("Revit");
-    await p
-      .getByLabel("Localização no banco", { exact: true })
-      .fill("Curitiba");
-    await tab(p, "Salvar combinação de filtros");
-    await dialog(p)
-      .getByLabel("Nome da consulta salva", { exact: true })
-      .fill("Revit em Curitiba");
-    await dialog(p)
-      .getByRole("button", { name: "Salvar", exact: true })
-      .click();
-    await p.reload();
-    await p
-      .getByLabel("Consulta salva de talentos", { exact: true })
-      .selectOption({ label: "Revit em Curitiba" });
-    assert.equal(
-      await p.getByRole("heading", { name: "Alex Demo", exact: true }).count(),
-      0,
+    await dialog(p).waitFor({ state: "detached" });
+  }
+  {
+    const { ctx, page: p } = await open(
+      "hr",
+      "/recrutamento/processo-seletivo",
     );
-    await tab(p, "Limpar filtros");
-    await shot(p, "talents");
-    await tab(p, "Novo talento");
-    await dialog(p)
-      .getByLabel("Nome completo", { exact: true })
-      .fill("Novo Talento Fictício");
-    await dialog(p)
-      .getByLabel("E-mail", { exact: true })
-      .fill("novo-demo@exemplo.invalid");
-    await dialog(p)
-      .getByLabel("Setor de interesse", { exact: true })
-      .fill("Arquitetura");
-    await tab(p, "Currículo e evidências");
-    await dialog(p)
-      .getByLabel("Importar currículo demonstrativo", { exact: true })
-      .setInputFiles("public/demo/culture/manual-demo.pdf");
-    await dialog(p)
-      .getByRole("button", { name: "Salvar talento", exact: true })
-      .click();
-    await p.reload();
     await p
-      .locator("article")
-      .filter({
-        has: p.getByRole("heading", {
-          name: "Novo Talento Fictício",
-          exact: true,
+      .getByRole("heading", { name: "Processo Seletivo", exact: true })
+      .waitFor();
+    await p
+      .getByRole("region", { name: "Kanban central de candidatos" })
+      .waitFor();
+    assert.equal(await p.locator(".ats-column").count(), 13);
+    await shot(p, "central-kanban");
+    const dragCard = p
+      .locator("article.ats-card")
+      .filter({ has: p.getByRole("button", { name: /^Alex Demo/ }) });
+    await dragCard.dragTo(
+      p
+        .locator(".ats-column")
+        .filter({
+          has: p.getByRole("heading", { name: "Triagem", exact: true }),
         }),
-      })
-      .getByRole("button", { name: "Abrir ficha", exact: true })
-      .click();
-    await dialog(p).getByText("manual-demo.pdf", { exact: true }).waitFor();
-    await close(p);
-    console.log(
-      "Recruitment RH: Match batch, missing vs unmet, no automatic movement",
     );
-    const before = await readDemo(p, "recruitment-v1:");
-    await area(p, "YouCon Match");
-    await p
-      .getByLabel("Vaga para YouCon Match", { exact: true })
-      .selectOption("rec-job-0");
-    await p
-      .getByLabel("Selecionar Alex Demo para comparar", { exact: true })
-      .check();
-    await p
-      .getByLabel("Selecionar Caio Teste para comparar", { exact: true })
-      .check();
-    await p
-      .getByRole("button", { name: "Analisar selecionados (2)", exact: true })
+    await dialog(p)
+      .getByLabel("Motivo da movimentação")
+      .fill("Triagem por arrastar e soltar.");
+    await dialog(p)
+      .getByRole("button", { name: "Confirmar movimentação" })
       .click();
-    await p.getByText("Comparação lado a lado", { exact: true }).waitFor();
-    await p.getByText(/Revit · Não atendido/).waitFor();
-    await p.getByText(/BIM · Não informado/).waitFor();
-    await shot(p, "match");
-    const after = await readDemo(p, "recruitment-v1:");
-    assert.deepEqual(after.applications, before.applications);
-    assert.equal(after.analyses.length, 2);
-    await p
-      .getByLabel("Busca em linguagem natural (simulação por termos)", {
-        exact: true,
-      })
-      .fill("Revit em Curitiba");
-    await tab(p, "Buscar no banco por termos");
-    assert.equal(
-      await p
-        .getByLabel("Selecionar Alex Demo para comparar", { exact: true })
-        .count(),
-      0,
-    );
-    console.log(
-      "Recruitment RH: private notes, technical delegation, individual assessment, proposal and formalization",
-    );
-    await talent(p);
-    await tab(p, "Técnica e pareceres");
-    await dialog(p)
-      .getByLabel("Parecer ou evidência técnica", { exact: true })
-      .fill("Observação RH confidencial de teste local.");
-    await dialog(p)
-      .getByRole("button", { name: "Registrar parecer", exact: true })
-      .click();
-    await tab(p, "DISC e Temperamentos");
-    await dialog(p)
-      .getByLabel("Modelo de instrumento", { exact: true })
-      .selectOption("template-0");
-    await dialog(p)
-      .getByRole("link", {
-        name: "Abrir link individual protegido",
-        exact: true,
-      })
-      .first()
-      .click();
-    await p.waitForURL("**/recrutamento/modelos?assessment=*");
-    await dialog(p)
-      .getByLabel(
-        "Descreva uma situação profissional que ajude a contextualizar este tema.",
-        { exact: true },
-      )
-      .waitFor();
+    await dialog(p).waitFor({ state: "detached" });
 
-    await dialog(p)
-      .getByRole("button", {
-        name: "Abrir instrumento individual",
-        exact: true,
-      })
-      .first()
-      .click();
-    await dialog(p)
-      .getByLabel(
-        "Descreva uma situação profissional que ajude a contextualizar este tema.",
-        { exact: true },
-      )
-      .fill("Resposta de teste sem diagnóstico.");
-    await dialog(p)
-      .getByLabel(
-        "Que informações você considera importantes para a conversa?",
-        { exact: true },
-      )
-      .fill("Contexto fictício.");
-    await dialog(p)
-      .getByRole("button", {
-        name: "Registrar respostas fictícias",
-        exact: true,
-      })
-      .click();
-    await tab(p, "Candidaturas");
-    await dialog(p)
-      .getByLabel("Parecer de decisão RH", { exact: true })
-      .fill("Evidências profissionais conferidas pelo RH nesta simulação.");
-    await dialog(p)
-      .getByRole("button", {
-        name: "Aprovar continuidade pelo RH",
-        exact: true,
-      })
-      .click();
-    await tab(p, "Propostas e admissão");
-    await dialog(p)
-      .getByLabel("Valor mensal da proposta (R$)", { exact: true })
-      .fill("5000");
-    await dialog(p)
-      .getByLabel("Condições da proposta demonstrativa", { exact: true })
-      .fill("Condições fictícias de contratação, sem envio real.");
-    await dialog(p)
-      .getByRole("button", { name: "Preparar proposta local", exact: true })
-      .click();
-    await dialog(p)
-      .getByRole("button", { name: "Registrar envio simulado", exact: true })
-      .click();
-    await dialog(p)
-      .getByRole("button", {
-        name: "Registrar aceite demonstrativo",
-        exact: true,
-      })
-      .click();
-    await dialog(p)
-      .getByRole("button", { name: "Confirmar contratação local", exact: true })
-      .click();
-    await dialog(p)
-      .getByText(
-        "Confirme formalização, aprovação RH, proposta aceita e orçamento autorizado.",
-        { exact: true },
-      )
-      .waitFor();
-    await dialog(p)
-      .getByLabel(
-        "Confirmo formalização exclusivamente fictícia desta contratação",
-        { exact: true },
-      )
-      .check();
-    await dialog(p)
-      .getByRole("button", { name: "Confirmar contratação local", exact: true })
-      .click();
-    await dialog(p)
-      .getByLabel("Autorizar campo email", { exact: true })
-      .check();
-    await dialog(p)
-      .getByRole("button", {
-        name: "Preparar admissão sem duplicidade",
-        exact: true,
-      })
-      .click();
-    await dialog(p).getByText("Preparada", { exact: true }).waitFor();
-    await shot(p, "proposal");
-    await close(p);
-    await p.goto(base + "/onboarding-offboarding");
-    await p
-      .getByRole("heading", {
-        name: "Admissões preparadas no Recrutamento",
-        exact: true,
-      })
-      .waitFor();
-    await p
-      .getByRole("button", {
-        name: "Iniciar Onboarding demonstrativo",
-        exact: true,
-      })
-      .click();
-    await p.getByRole("button", { name: "Já iniciado", exact: true }).waitFor();
-    await p.reload();
-    await p.getByRole("button", { name: "Já iniciado", exact: true }).waitFor();
-    await p.getByRole("button", { name: "Onboardings", exact: true }).click();
-    await p.getByRole("button", { name: /Alex Demo/ }).waitFor();
-    await p.goto(base + "/recrutamento/modelos");
-    await tab(p, "Automações");
-    await p.getByText("Execuções simuladas", { exact: true }).waitFor();
-    await shot(p, "automations");
-    await p
-      .getByRole("button", { name: "Desativar", exact: true })
-      .first()
-      .click();
-    await p
-      .getByRole("button", { name: "Ativar", exact: true })
-      .first()
-      .waitFor();
-    console.log(
-      "Recruitment RH: form builder, conditional preview, protected career application and duplicate prevention",
-    );
-    await tab(p, "Formulários");
-    await p
-      .getByRole("button", {
-        name: "Editar formulário Inscrição demonstrativa",
-        exact: true,
-      })
-      .click();
-    await dialog(p)
-      .getByRole("button", { name: "Adicionar campo", exact: true })
-      .click();
-    const details = dialog(p).locator("details").last();
-    await details.locator("summary").click();
-    await dialog(p)
-      .getByLabel("Pergunta 10", { exact: true })
-      .fill("Software de interesse");
-    await dialog(p)
-      .getByLabel("Exibir campo 10 quando", { exact: true })
-      .selectOption("field-sector");
-    await dialog(p)
-      .getByLabel("Resposta que exibe campo 10", { exact: true })
-      .fill("Engenharia");
-    await dialog(p)
-      .getByRole("button", { name: "Salvar formulário", exact: true })
-      .click();
-    await area(p, "Página de Carreiras");
-    await shot(p, "careers");
-    assert.equal(
-      await p
-        .getByRole("heading", {
-          name: "Projetista de Engenharia · Demo",
-          exact: true,
-        })
-        .count(),
-      0,
-    );
-    await p
-      .getByRole("button", {
-        name: "Simular cadastro no Banco de Talentos",
-        exact: true,
-      })
-      .click();
+    // Independent authenticated form outside the administrative shell.
+    await p.goto(base + "/candidatura-demonstrativa");
     await p
       .getByLabel("Nome completo *", { exact: true })
-      .fill("Candidatura Protegida Demo");
+      .fill("Pessoa Central Fictícia");
     await p
       .getByLabel("E-mail *", { exact: true })
-      .fill("candidatura-demo@exemplo.invalid");
+      .fill("central-ficticia@exemplo.invalid");
     await p
       .getByLabel("Área de interesse *", { exact: true })
       .selectOption("Arquitetura");
-    assert.equal(
-      await p.getByLabel("Software de interesse", { exact: true }).count(),
-      0,
-    );
     await p
-      .getByLabel("Área de interesse *", { exact: true })
-      .selectOption("Engenharia");
-    await p.getByLabel("Software de interesse", { exact: true }).fill("Revit");
+      .getByLabel("Nível de experiência", { exact: true })
+      .selectOption({ label: "Júnior: até 3 anos de experiência" });
     await p
       .getByLabel(
         "Confirmo o uso de dados exclusivamente fictícios nesta simulação local",
-        { exact: true },
       )
       .check();
-    await p
-      .getByRole("button", {
-        name: "Registrar candidatura demonstrativa",
-        exact: true,
-      })
-      .click();
-    await p
-      .getByText(
-        "Cadastro de teste registrado apenas neste navegador. Nenhuma candidatura real foi enviada.",
-        { exact: true },
-      )
-      .waitFor();
-    await p
-      .getByRole("button", {
-        name: "Registrar candidatura demonstrativa",
-        exact: true,
-      })
-      .click();
-    const submitted = await readDemo(p, "recruitment-v1:");
+    await tab(p, "Registrar candidatura demonstrativa");
+    await p.getByRole("link", { name: "Retornar ao processo" }).waitFor();
     assert.equal(
-      submitted.candidates.filter(
-        (c) => c.email === "candidatura-demo@exemplo.invalid",
-      ).length,
-      1,
-    );
-    await area(p, "Banco de Talentos");
-    await p
-      .locator("article")
-      .filter({
-        has: p.getByRole("heading", {
-          name: "Candidatura Protegida Demo",
-          exact: true,
-        }),
-      })
-      .getByRole("button", { name: "Abrir ficha", exact: true })
-      .click();
-    await tab(p, "Privacidade");
-    await dialog(p)
-      .getByLabel("Justificativa da exclusão local", { exact: true })
-      .fill("Teste de anonimização local.");
-    await dialog(p)
-      .getByRole("button", {
-        name: "Anonimizar cadastro demonstrativo",
-        exact: true,
-      })
-      .click();
-    assert.equal(
-      await p
-        .getByRole("heading", {
-          name: "Candidatura Protegida Demo",
-          exact: true,
-        })
-        .count(),
+      await p.getByRole("navigation", { name: "Navegação principal" }).count(),
       0,
     );
-    await ctx.addCookies([
-      { name: "youcon-organization", value: "org-b", url: base },
-    ]);
-    await p.goto(base + "/recrutamento/talentos");
-    assert.equal(
-      await p
-        .getByRole("heading", { name: "Novo Talento Fictício", exact: true })
-        .count(),
-      0,
+    await route(p, "processo-seletivo", "Processo Seletivo");
+    await p.getByRole("button", { name: /^Pessoa Central Fictícia/ }).waitFor();
+    await p.reload();
+    await p.getByRole("button", { name: /^Pessoa Central Fictícia/ }).waitFor();
+    let s = await readDemo(p);
+    const a = s.applications.find(
+      (a) =>
+        a.candidate ===
+        s.candidates.find((p) => p.email === "central-ficticia@exemplo.invalid")
+          .id,
     );
-    await ctx.close();
-  }
-  console.log(
-    "Director and leadership: scoped pages, private data boundaries, finance review and technical feedback",
-  );
-  {
-    const { ctx, page: p } = await open("director");
+    assert.equal(a.job, "");
+    assert.equal(a.stage, "pipeline-0");
+    await moveCard(p, "Pessoa Central Fictícia", "pipeline-6");
+    await moveCard(p, "Pessoa Central Fictícia", "pipeline-9");
+    await route(p, "talentos", "Banco de Talentos");
+    await p.getByRole("button", { name: /^Pessoa Central Fictícia/ }).waitFor();
     await p
-      .getByRole("heading", { name: "Visão Geral", exact: true })
-      .waitFor();
-    assert.equal(
-      await p
-        .getByRole("navigation", { name: "Áreas de Recrutamento", exact: true })
-        .getByRole("link")
-        .count(),
-      2,
-    );
-    assert.equal(await p.getByText("Alex Demo", { exact: true }).count(), 0);
-    await p
-      .getByRole("button", { name: "Revisar exceção financeira", exact: true })
-      .click();
+      .getByLabel("Selecionar Pessoa Central Fictícia", { exact: true })
+      .check();
+    await tab(p, "Reativar selecionados");
     await dialog(p)
-      .getByLabel("Parecer da Diretoria", { exact: true })
-      .fill("Exceção fictícia conferida, dentro das condições de teste.");
+      .getByLabel("Motivo da movimentação")
+      .fill("Nova oportunidade fictícia.");
     await dialog(p)
-      .getByRole("button", {
-        name: "Registrar decisão financeira",
-        exact: true,
-      })
+      .getByRole("button", { name: "Confirmar movimentação" })
       .click();
-    await p.getByText(/Aprovada/).waitFor();
-    await p.goto(base + "/recrutamento/talentos");
-    await p.waitForURL("**/acesso-negado");
-    await ctx.close();
-  }
-  {
-    const { ctx, page: p } = await open("leadership", "/recrutamento/vagas");
-    await p
-      .getByRole("heading", { name: "Gestão de Vagas", exact: true })
-      .waitFor();
+    await dialog(p).waitFor({ state: "detached" });
     assert.equal(
-      await p.getByRole("button", { name: "Nova vaga", exact: true }).count(),
+      await p.getByRole("button", { name: /^Pessoa Central Fictícia/ }).count(),
       0,
     );
-    assert.equal(await p.getByText(/Orçamento mensal aprovado/).count(), 0);
-    assert.equal(
-      await p.getByRole("heading", { name: "Caio Teste", exact: true }).count(),
-      0,
-    );
-    await p
-      .getByRole("button")
-      .filter({
-        has: p.getByRole("heading", { name: "Alex Demo", exact: true }),
-      })
-      .click();
-    assert.equal(
-      await dialog(p)
-        .getByRole("button", { name: "DISC e Temperamentos", exact: true })
-        .count(),
-      0,
-    );
-    assert.equal(
-      await dialog(p)
-        .getByText(/Observação confidencial demonstrativa/)
-        .count(),
-      0,
-    );
-    await tab(p, "Técnica e pareceres");
+    await route(p, "processo-seletivo", "Processo Seletivo");
+    await p.getByRole("button", { name: /^Pessoa Central Fictícia/ }).click();
     await dialog(p)
-      .getByLabel("Parecer ou evidência técnica", { exact: true })
-      .fill("Parecer técnico do responsável designado, fictício.");
+      .getByLabel("Experiência validada pelo RH")
+      .selectOption("Pleno: de 4 a 6 anos de experiência");
     await dialog(p)
-      .getByRole("button", { name: "Registrar parecer", exact: true })
-      .click();
-    await dialog(p)
-      .getByText("Parecer técnico do responsável designado, fictício.", {
-        exact: true,
-      })
-      .waitFor();
+      .getByLabel("Vaga vinculada opcional")
+      .selectOption("rec-job-0");
+    await shot(p, "candidate-side-panel");
     await close(p);
-    await shot(p, "leadership");
+    await tab(p, "YouCon Match");
+    await dialog(p)
+      .getByRole("button", { name: "Analisar e comparar selecionados" })
+      .click();
+    await dialog(p)
+      .getByText("Perguntas sugeridas", { exact: true })
+      .first()
+      .waitFor();
+    await shot(p, "match-evidence");
+    await close(p);
+    // Human approval and declined proposal retain the original offer and reason.
+    await p.getByRole("button", { name: /^Alex Demo/ }).click();
+    await dialog(p)
+      .getByLabel("Parecer do RH para continuidade e proposta")
+      .fill("Requisitos técnicos revisados.");
+    await dialog(p)
+      .getByRole("button", { name: "Aprovar continuidade e proposta" })
+      .click();
+    await dialog(p)
+      .getByRole("button", { name: "Propostas e admissão", exact: true })
+      .click();
+    await dialog(p).getByLabel("Valor mensal da proposta (R$)").fill("4000");
+    await dialog(p)
+      .getByRole("button", { name: "Preparar proposta local" })
+      .click();
+    await dialog(p)
+      .getByRole("button", { name: "Registrar envio simulado" })
+      .click();
+    await dialog(p)
+      .getByLabel("Motivo da recusa", { exact: true })
+      .fill("Condições contratuais fictícias.");
+    await dialog(p)
+      .getByRole("button", { name: "Registrar recusa demonstrativa" })
+      .click();
+    await close(p);
+    s = await readDemo(p);
+    assert.equal(
+      s.applications.find((a) => a.id === "rec-application-0").stage,
+      "pipeline-12",
+    );
+    assert.ok(s.offers.some((o) => o.state === "Recusada"));
+    await moveCard(p, "Pessoa Central Fictícia", "pipeline-8");
+    s = await readDemo(p);
+    assert.equal(s.admissions.length, 1);
+    assert.equal(s.employments.length, 0);
+    await moveCard(p, "Pessoa Central Fictícia", "pipeline-0");
+    await moveCard(p, "Pessoa Central Fictícia", "pipeline-8");
+    s = await readDemo(p);
+    assert.equal(s.admissions.length, 1);
+    await route(p, "admissao", "Admissão Digital");
+    await p.getByRole("button", { name: /^Pessoa Central Fictícia/ }).click();
+    await dialog(p)
+      .getByLabel("Referência do processo na Flash")
+      .fill("FLASH-FICTICIO-001");
+    await dialog(p)
+      .getByLabel("RH conferiu a confirmação externa da admissão CLT")
+      .check();
+    await dialog(p).getByLabel("Valor bruto contratual (R$)").fill("4000");
+    await dialog(p)
+      .getByRole("button", { name: "Salvar acompanhamento da admissão" })
+      .click();
+    await dialog(p)
+      .getByLabel("Confirmo a formalização fictícia revisada pelo RH")
+      .check();
+    await dialog(p)
+      .getByRole("button", { name: "Confirmar formalização local" })
+      .click();
+    await dialog(p)
+      .getByRole("link", { name: "Revisar e iniciar Onboarding" })
+      .waitFor();
+    await shot(p, "admission-clt-confirmed");
+    await close(p);
+    s = await readDemo(p);
+    assert.equal(s.employments.length, 1);
+    assert.equal(s.handoffs.length, 1);
+    // Distinct PJ and intern admissions, no duplicate person.
+    for (const [name, contract] of [
+      ["Bia Exemplo", "PJ"],
+      ["Caio Teste", "Estágio"],
+    ]) {
+      await route(p, "processo-seletivo", "Processo Seletivo");
+      await p.getByRole("button", { name: new RegExp("^" + name) }).click();
+      await dialog(p).getByLabel("Vaga vinculada opcional").selectOption("");
+      const select = dialog(p).getByLabel(
+        "Modalidade pretendida para admissão",
+      );
+      if (await select.count()) await select.selectOption(contract);
+      await close(p);
+      await moveCard(p, name, "pipeline-8");
+      await route(p, "admissao", "Admissão Digital");
+      await p.getByLabel("Fluxo de admissão").selectOption(contract);
+      await p.getByRole("button", { name: new RegExp("^" + name) }).click();
+      const label =
+        contract === "PJ"
+          ? "Contrato de prestação assinado"
+          : "Termo de compromisso assinado";
+      await dialog(p)
+        .getByLabel("Anexar " + label, { exact: true })
+        .setInputFiles({
+          name: "contrato-ficticio.pdf",
+          mimeType: "application/pdf",
+          buffer: Buffer.from("%PDF-1.4\nDemonstração fictícia"),
+        });
+      const today = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Sao_Paulo",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date());
+      await dialog(p).getByLabel("Data da assinatura confirmada").fill(today);
+      await dialog(p)
+        .getByRole("button", { name: "Salvar acompanhamento da admissão" })
+        .click();
+      await dialog(p)
+        .getByRole("button", {
+          name: "Preencher formulário individual demonstrativo",
+        })
+        .click();
+      await dialog(p)
+        .getByLabel(
+          contract === "PJ"
+            ? "Identificação cadastral da prestação de serviços *"
+            : "Instituição de ensino e curso *",
+          { exact: true },
+        )
+        .fill("Instituição / serviço inteiramente fictício");
+      await dialog(p)
+        .getByLabel(
+          "Confirmo o uso de dados exclusivamente fictícios nesta simulação local",
+        )
+        .check();
+      await dialog(p)
+        .getByRole("button", { name: "Registrar candidatura demonstrativa" })
+        .click();
+      await dialog(p)
+        .getByLabel("Confirmo a formalização fictícia revisada pelo RH")
+        .check();
+      await dialog(p)
+        .getByRole("button", { name: "Confirmar formalização local" })
+        .click();
+      await dialog(p)
+        .getByRole("link", { name: "Revisar e iniciar Onboarding" })
+        .waitFor();
+      await close(p);
+    }
+    await p.goto(base + "/onboarding-offboarding");
+    await p
+      .getByRole("heading", { name: "Admissões preparadas no Recrutamento" })
+      .waitFor();
+    await p
+      .getByRole("button", { name: "Iniciar Onboarding demonstrativo" })
+      .first()
+      .click();
+    await p.getByRole("button", { name: "Já iniciado", exact: true }).waitFor();
+    await p.goto(base + "/offboarding");
+    await p
+      .getByText("Contratações locais · vínculo com Recrutamento", {
+        exact: true,
+      })
+      .click();
+    await p
+      .getByLabel("Vínculo local para Offboarding")
+      .selectOption({ label: "Pessoa Central Fictícia · CLT" });
+    await tab(p, "Iniciar Offboarding vinculado");
+    await p.getByText(/Ativo · Atividades no card de Offboarding/).waitFor();
+    await p
+      .getByLabel(
+        "RH confirma a conclusão fictícia após conferir todas as atividades",
+      )
+      .check();
+    await tab(p, "Confirmar conclusão e vínculo encerrado");
+    await p
+      .getByRole("alert")
+      .filter({ hasText: "Conclua todas as atividades" })
+      .waitFor();
+    await shot(p, "offboarding-linked-gate");
+    await tab(p, "Offboardings");
+    await p.getByRole("button", { name: /Pessoa Central Fictícia/ }).click();
+    for (const track of ["Trilha RH", "Trilha operacional"]) {
+      await dialog(p)
+        .getByRole("button", { name: new RegExp("^" + track) })
+        .click();
+      const details = dialog(p).locator("details");
+      for (let i = 0; i < (await details.count()); i++) {
+        const d = details.nth(i);
+        if (!((await d.getAttribute("open")) !== null))
+          await d.locator("summary").click();
+      }
+      const checks = dialog(p).getByRole("checkbox");
+      for (let i = 0; i < (await checks.count()); i++) {
+        if (await checks.nth(i).isEnabled()) await checks.nth(i).check();
+      }
+    }
+    await dialog(p)
+      .getByRole("button", { name: "Fechar painel", exact: true })
+      .click();
+    await tab(p, "Confirmar conclusão e vínculo encerrado");
+    await p
+      .getByRole("button", { name: "Encerramento confirmado", exact: true })
+      .waitFor();
+
+    await route(p, "indicadores", "Indicadores");
+    await p.getByText("Formalizações RH", { exact: true }).waitFor();
+    await shot(p, "indicators");
+    s = await readDemo(p);
+    assert.equal(s.employments.length, 3);
+    assert.equal(
+      s.admissions.filter((a) => a.state === "Confirmada").length,
+      3,
+    );
+    assert.ok(
+      s.applications.find(
+        (a) =>
+          a.candidate ===
+          s.candidates.find((p) => p.name === "Pessoa Central Fictícia").id,
+      ).fromBank,
+    );
+    await route(p, "configuracoes", "Configurações");
+    await tab(p, "Cards e tags");
+    await p.getByLabel("Cidade", { exact: true }).uncheck();
+    await tab(p, "Salvar cards, tags e requisitos");
+    await p.reload();
+    await tab(p, "Cards e tags");
+    assert.equal(
+      await p.getByLabel("Cidade", { exact: true }).isChecked(),
+      false,
+    );
+    await shot(p, "configuration");
+    await route(p, "processo-seletivo", "Processo Seletivo");
+    await tab(p, "Filtros avançados");
+    await p.getByLabel("Cidade", { exact: true }).fill("inexistente");
+    await p
+      .getByText("Nenhum processo corresponde aos filtros.", { exact: true })
+      .waitFor();
+    await tab(p, "Limpar filtros");
+    await tab(p, "Tabela");
+    await p.getByRole("table").waitFor();
+    await p.setViewportSize({ width: 390, height: 844 });
+    await p.emulateMedia({ reducedMotion: "reduce" });
+    await tab(p, "Kanban");
+    await shot(p, "mobile-central");
+    await p.getByRole("button", { name: /^Alex Demo/ }).focus();
+    await p.keyboard.press("Enter");
+    await dialog(p).waitFor();
+    await close(p);
     await ctx.close();
   }
   for (const role of [
+    "director",
+    "leadership",
     "professional",
     "professional-pj",
     "professional-intern",
   ]) {
-    const { ctx, page: p } = await open(role);
-    await p.waitForURL("**/acesso-negado");
-    await p.goto(base + "/recrutamento/carreiras");
+    const { ctx, page: p } = await open(
+      role,
+      "/recrutamento/processo-seletivo",
+    );
+    if (role.startsWith("professional")) {
+      await p.waitForURL("**/acesso-negado");
+    } else {
+      await p
+        .getByRole("heading", { name: "Processo Seletivo", exact: true })
+        .waitFor();
+      const nav = p.getByRole("navigation", {
+        name: "Navegação principal",
+        exact: true,
+      });
+      assert.equal(
+        await nav
+          .getByRole("link", { name: "Configurações", exact: true })
+          .count(),
+        0,
+      );
+      assert.equal(
+        await nav
+          .getByRole("link", { name: "Admissão Digital", exact: true })
+          .count(),
+        0,
+      );
+      if (role === "director") {
+        assert.equal(
+          await p.getByRole("button", { name: /^Alex Demo/ }).count(),
+          0,
+        );
+        await shot(p, "director-managerial");
+      } else {
+        await shot(p, "leadership-assigned");
+        await p.goto(base + "/recrutamento/vagas");
+        await p.waitForURL("**/acesso-negado");
+      }
+    }
+    await p.goto(base + "/candidatura-demonstrativa");
     await p.waitForURL("**/acesso-negado");
     await ctx.close();
   }
-  {
-    const { ctx, page: p } = await open("hr", "/recrutamento/visao-geral");
-    await p
-      .getByRole("heading", { name: "Visão Geral", exact: true })
-      .waitFor();
-    await p.setViewportSize({ width: 390, height: 844 });
-    await p.emulateMedia({ reducedMotion: "reduce" });
-    await shot(p, "mobile-overview");
-    await area(p, "Gestão de Vagas");
-    await shot(p, "mobile-kanban");
-    const c = p.getByRole("button").filter({
-      has: p.getByRole("heading", { name: "Alex Demo", exact: true }),
-    });
-    await c.focus();
-    await p.keyboard.press("Enter");
-    await dialog(p).waitFor();
-    await p.keyboard.press("Escape");
-    assert.equal(await dialog(p).count(), 0);
-    await ctx.close();
-  }
+  const anon = await browser.newContext(),
+    anonPage = await anon.newPage();
+  await anonPage.goto(base + "/candidatura-demonstrativa");
+  await anonPage.waitForURL("**/login**");
+  await anon.close();
   assert.deepEqual(errors, []);
   assert.deepEqual(violations, []);
   console.log(
@@ -767,7 +641,7 @@ try {
       mutations: 0,
       requests: requests.length,
       flows:
-        "RH Kanban drag/drop, snapshots/custom stages, talent import/reload and saved filters, explainable Match batch/compare without movement, private notes and individual profile instruments, human approval and financial proposal gates, explicit hire and idempotent authorized Onboarding copy, conditional form builder, protected career submission/deduplication and privacy erasure, scoped tenants, director finance-only decisions, assigned technical leadership, staff/PJ route denial, mobile/keyboard/reduced motion",
+        "Protected standalone intake -> entry/dedup/reload; optional stages; curated bank/reactivation; separate RH level; evidence Match; refused offer; unique admission; CLT Flash / PJ / intern document formalization; authorized Onboarding; Offboarding explicit conclusion gate; configurable cards; indicators; role/organization scoping; mobile keyboard/reduced-motion",
     }),
   );
 } catch (e) {

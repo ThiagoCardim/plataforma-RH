@@ -1,88 +1,70 @@
-# Recrutamento e Seleção — demonstração ATS local
+# Recrutamento e Seleção — processo centralizado (demonstração local)
 
-Continuidade sobre `218e0e8` (Cultura), branch de funcionalidade, sem merge. Não altera o Supabase compartilhado, portal operacional, Auth, RLS, grants, Storage ou produção. Não utiliza APIs de IA, serviços de envio, rastreamento, processamento remoto de currículos ou novas imagens geradas por IA.
+Continuidade do módulo existente (`4701d9b`), sem reiniciar os cadastros. Branch `feat/recruitment-central-workflow`. Nenhuma migração ou escrita no Supabase, alteração de Auth/RLS/grants/Storage, integração externa, merge ou produção.
 
-## Navegação
+## Navegação e autorização
 
-Categoria independente **Recrutamento**, com seis rotas protegidas:
+| Página | Rota | Acesso |
+| --- | --- | --- |
+| Processo Seletivo (entrada principal) | `/recrutamento/processo-seletivo` | RH completo; Diretoria gerencial; liderança somente designados |
+| Gestão de Vagas | `/recrutamento/vagas` | RH; Diretoria gerencial/financeira |
+| Admissão Digital | `/recrutamento/admissao` | RH |
+| Banco de Talentos | `/recrutamento/talentos` | RH |
+| Indicadores | `/recrutamento/indicadores` | RH; Diretoria |
+| Configurações | `/recrutamento/configuracoes` | RH |
+| Formulário independente protegido | `/candidatura-demonstrativa` | RH, demonstração sem área administrativa |
 
-| Destino              | Rota                        | Acesso                                                          |
-| -------------------- | --------------------------- | --------------------------------------------------------------- |
-| Visão Geral          | `/recrutamento/visao-geral` | RH; recortes gerenciais Diretoria; recorte designado liderança  |
-| Gestão de Vagas      | `/recrutamento/vagas`       | RH; acompanhamento Diretoria; candidaturas designadas liderança |
-| Banco de Talentos    | `/recrutamento/talentos`    | RH                                                              |
-| YouCon Match         | `/recrutamento/match`       | RH                                                              |
-| Modelos e Avaliações | `/recrutamento/modelos`     | RH                                                              |
-| Página de Carreiras  | `/recrutamento/carreiras`   | RH, como demonstração protegida                                 |
+A categoria tem exatamente essa ordem. Match aparece no processo e no banco. Rotas anteriores redirecionam, preservando parâmetros dos instrumentos individuais. As guardas novas (`recruitmentWorkflowScope`) usam exclusivamente a identidade/organização/papéis de `careerScope()`, exigindo a permissão gerencial existente. Profissionais não recebem acesso à gestão. O formulário independente continua autenticado, inclusive em links de admissão; o token identifica o formulário e **não** substitui autorização. Não há coleta pública habilitada, seletor de perfil ou bypass de login.
 
-`recruitmentScope` utiliza `careerScope()`/`home.view`, identidade, organização, vínculo e papéis autenticados existentes. Gestão RH/Diretoria continua exigindo a permissão gerencial já existente. Profissionais sem atribuição funcional não acessam as rotas, inclusive a prévia de carreiras. Não existe seletor de perfil ou bypass de autenticação. PJ que já tenha papel RH ou liderança conserva a atribuição funcional desse papel; o vínculo não concede gestão.
+## Operação do RH
 
-## Funcionalidades
+- Kanban único com as 13 etapas solicitadas. Movimentação livre com motivo, por arrastar/soltar, seletor acessível ou lote. Não exige concluir todas as etapas ou seus checklists para movimentar. Etapas ocupadas não podem ser excluídas. Há modos tabela e cards, seleção múltipla e filtros combinados por área/setor/nível/cidade/formação/competências/softwares/disponibilidade/vínculo/vaga/origem/tags/etapa/período. Buscas podem ser salvas, inclusive reaproveitando as buscas anteriores.
+- Entrada independente de vaga. O formulário geral tem experiências autodeclaradas configuráveis, privacidade, cor, mensagem de confirmação, condições, descrições, ordenação e anexos locais. O reenvio do mesmo e-mail com processo ativo preserva o cadastro/processo em vez de duplicar ou sobrescrever dados. Cadastro manual sinaliza possíveis duplicidades para revisão humana.
+- Ficha lateral preserva currículo, portfólio, respostas, evidências, Match, instrumentos DISC/Temperamentos, entrevistas, testes técnicos, notas, propostas, exceções e histórico. A experiência validada pelo RH é separada da declaração original. Designações técnicas e compartilhamento explícito de CV/respostas permanecem disponíveis, exclusivamente locais.
+- Banco de Talentos é uma projeção dos processos na etapa com função **Banco**. Reprovados e desqualificados não são incluídos. Reativar o Banco preserva cadastro/ciclo e registra a proveniência; reativar uma recusa/reprovação encerrada cria outro ciclo, mantendo a negociação anterior. Um processo posterior a uma contratação preserva o ciclo anterior e cria outro identificador, sem substituir sua história.
+- Vagas são gerenciais, sem Kanban próprio e sem conteúdo longo obrigatório. Cargo/setor/vínculo/nível/posições/motivo/datas/orçamento/custo opcional/requisitos/observações são editáveis. Há cópia, pausa, reabertura, cancelamento e encerramento. Preenchimento parcial, posições restantes e data de preenchimento integral vêm de formalizações confirmadas, nunca da coluna Contratados. Vagas integralmente preenchidas permanecem protegidas contra alterações retroativas das posições.
+- Match aceita vaga ou requisitos avulsos, critérios/pesos revisáveis, seleção individual/lote, comparação, cobertura, resumo, evidências, lacunas e perguntas. Pesquisa por linguagem natural usa correspondência simples de termos profissionais, sem serviço de IA. Não há OCR ou extração automática de currículo. Critérios pessoais irrelevantes são rejeitados pelo validador existente. Compatibilidade demonstrativa não movimenta ou seleciona candidatos.
 
-- Dashboard com vagas, candidaturas, passagens e conversão por etapa, origens, propostas, entrevistas, contratações, tempo de contratação e custo cadastrado por contratação. Recortes por vaga, setor, vínculo, responsável e período de cadastro das candidaturas. Gráfico de funil permite consultar as candidaturas do recorte.
-- Vagas: cadastro, edição, cópia, publicação local, pausa e encerramento; cargo, setor, vínculo, posições, atividades, requisitos, condições/benefícios, orçamento e previsão. Kanban por vaga, drag/drop, seletor acessível de etapa, lista, pesquisa, campos e checklists por etapa, prazos, responsáveis, tags e histórico.
-- Banco: ficha profissional, CV/portfólio locais, importação demonstrativa, possível duplicidade por e-mail/telefone/nome, várias candidaturas por pessoa, origem/indicação, entrevistas, notas e pareceres, filtros combináveis e consultas salvas. Importar significa anexar o arquivo, não OCR ou extração automática de currículo.
-- Formulários: campos ordenáveis, tipos de resposta, obrigatoriedade, perguntas condicionais com dependência de campos anteriores, prévia, cor e confirmação; formulário geral e snapshot específico de cada vaga.
-- Modelos: processos, DISC, Temperamentos, entrevistas, técnica, prática, proposta, mensagens e motivos de encerramento; criar/editar/duplicar, perguntas e conteúdo, versões preservadas no uso. Modelos de processo copiam etapas aprovadas para edição de cada vaga.
-- Instrumentos: link individual protegido, perguntas e respostas fictícias, histórico de versão do instrumento, respostas somente RH. Não há diagnóstico psicológico, cálculo de personalidade validado, corte definitivo ou distribuição externa de links.
-- Propostas: decisão humana RH, rascunho, registro de envio/aceite/recusa **simulados**, exceção financeira pela Diretoria, confirmação explícita de formalização e preparação de dados autorizados para admissão.
-- Página de Carreiras: apresentação e cor editáveis, referência à Cultura existente, oportunidades listadas/exclusivas, filtros, detalhes, formulário e Banco de Talentos. É uma **prévia autenticada**, sem publicação aberta ou recebimento de candidaturas reais.
-- Automações: editor de gatilhos/condições/ações, ativação, desativação e log local. Nova candidatura já cria um card por comando explícito de inscrição; movimentação utiliza checklists da etapa; entrevista cria registro no calendário local; instrumento pendente gera registro de notificação local; aprovação RH pode preparar rascunho de proposta incompleto; aceite registra intenção de preparar admissão. Nenhuma regra envia mensagens, decide seleção ou formaliza contratação.
+## Admissão e vínculo
 
-## Match — explicável e exclusivamente demonstrativo
+`Contratados` significa **aprovação para contratar**, com status ainda ativo no processo. A movimentação gera uma única admissão por identificador de ciclo; ir e voltar não gera outra. Movimentar a admissão para a última coluna também não ativa vínculo.
 
-Motor de regras local sobre **evidências profissionais estruturadas**, informadas ficticiamente pelo RH. Não lê semanticamente arquivos, não chama modelos de IA, não faz OCR, não valida autenticidade de documentos e não utiliza idade, gênero, raça, religião, deficiência, aparência, estado civil ou outras características pessoais protegidas como dimensões de classificação.
+- **CLT:** acompanhamento externo Flash com referência, confirmação externa, responsável, datas, pendências e anotações. Sem API ou reprodução da coleta documental da Flash.
+- **Estágio / PJ:** fluxos separados com cópias versionadas de formulários, documentos, instruções, campos, checklists e prazos. Coleta individual protegida com arquivos fictícios, e acompanhamento pelo RH. São exigidas assinatura, documentação e informações obrigatórias antes da confirmação.
+- Formalização exige ação e confirmação explícitas do RH, aprovação ainda vigente no processo, ausência de vínculo local ativo, início não futuro, atividades/campos obrigatórios, posição disponível, correspondência de valor e aceite de eventual proposta existente, e orçamento ou exceção da Diretoria para o valor exato. Se houver contratação anterior, a elegibilidade precisa estar revisada como Elegível. Finalização repetida é idempotente.
+- O vínculo local (`employments`) é uma estrutura demonstrativa de continuidade. Não cria cadastro real na Base Central, contrato, salário, pessoa, conta, Auth, pagamento ou revogação. Datas futuras permanecem em acompanhamento de admissão até poderem ser confirmadas, sem assumir vínculo ativo antecipadamente.
+- O pacote para Base Central e Onboarding contém somente os campos autorizados (`name`, `email`, `phone`, `city`), com autor/organização e referência canônica. O RH inicia o Onboarding **no módulo existente**, mediante ação explícita, usando modelos aprovados compatíveis. A conta fica `unlinked`; nenhum papel ou acesso é concedido. Não copia notas, instrumentos, currículo ou condições financeiras.
 
-As dimensões permitidas são Competências, Softwares, Formação, Experiência, Disponibilidade e Modalidade. Critérios, requisitos obrigatórios/desejáveis e pesos são personalizáveis; os números iniciais são apenas exemplos e não regras definitivas. Termos explicitamente protegidos/irrelevantes são recusados no critério. A curadoria humana continua necessária: o filtro de termos não substitui avaliação da pertinência profissional.
+## Offboarding e relacionamento
 
-Cada requisito informa:
+O módulo existente de Offboarding é a origem do desligamento. Seu painel de contratações locais permite selecionar um vínculo ativo e iniciar um processo com modelos institucionais e operacionais compatíveis, sem repetição pela referência do vínculo.
 
-1. **Comprovado na simulação:** há evidência estruturada documentada, com fonte;
-2. **Não atendido:** há declaração explícita de não atendimento;
-3. **Não informado:** faltam dados ou as fontes se contradizem; não é ausência de competência.
+Arquivamento não encerra vínculo. Depois das atividades obrigatórias, o RH confirma explicitamente a data e a conclusão. Isso encerra somente o vínculo local, registra o processo/data/autor na timeline e mantém recrutamento, proposta e admissão. Não executa rescisão ou revogação real. Recontratação exige outro ciclo e revisão de elegibilidade; nunca reabre ou sobrescreve uma contratação anterior.
 
-O percentual demonstrativo considera pesos dos requisitos documentados; a **cobertura documental** é mostrada separadamente. Sem informação suficiente, o percentual é indefinido. Ausência de requisito obrigatório não reprova ou movimenta ninguém. Não comparar percentuais sem considerar cobertura, contexto e revisão utilizada.
+## Configurações e histórico
 
-Análises individuais/em lote guardam snapshot, data e revisão da vaga; comparação lado a lado exige a revisão atual. Resumo e perguntas são construídos a partir dos dados fictícios e dos requisitos não esclarecidos. A busca em linguagem natural é uma **simulação por termos**, não compreensão linguística de um LLM. Nenhuma análise altera candidaturas, propostas ou decisões RH.
+O RH edita etapas, cores, prazos, função operacional, campos condicionais, checklists, cards/tags, formulários, critérios avulsos do Match, documentação/fluxos por vínculo e modelos de entrevistas, DISC, Temperamentos, técnica, mensagens, propostas e motivos. Regras de automação podem ter escopo de etapa, setor e vínculo; registram simulação/rastreabilidade local e podem preparar rascunhos, sem envio real, decisão ou formalização automática. Instrumentos aplicados e admissões preservam snapshots; DISC e Temperamentos não recebem metodologia definitiva, diagnóstico ou uso automático na decisão.
 
-## Privacidade e permissões
+A atualização da estrutura usa a **mesma chave local**. Candidatos, notas, avaliações, propostas, respostas e anexos são conservados. Aplicações anteriores guardam `legacy` com etapa/status/vaga, definições completas de etapas e visitas originais; o processo atual é projetado no quadro central e os demais ciclos ficam históricos. Etapas personalizadas anteriores sem correspondência ficam preservadas no snapshot, com revisão humana da classificação atual. Restaurar exemplos requer confirmação e afeta apenas o Recrutamento deste escopo; não apaga cópias já autorizadas no Onboarding.
 
-| Perfil               | Candidatos e notas                                                    | Perfil / Match                                                 | Orçamento / proposta                    | Decisão                                              |
-| -------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------- | --------------------------------------- | ---------------------------------------------------- |
-| RH                   | Gestão completa, designação e compartilhamento explícito              | Completo, instrumentos restritos                               | Cadastro e preparação; solicita exceção | Continuidade/encerramento e formalização             |
-| Diretoria            | Identificadores gerenciais sem identidade pessoal, notas ou respostas | Sem acesso                                                     | Visão financeira e revisão de exceções  | Não decide contratação; não aprova a própria exceção |
-| Liderança            | Somente candidatos designados; CV/respostas apenas se RH compartilhar | Sem DISC, Temperamentos, análises Match ou notas confidenciais | Sem acesso                              | Registra somente parecer técnico designado           |
-| Demais profissionais | Sem gestão                                                            | Sem acesso                                                     | Sem acesso                              | Nenhuma                                              |
+## Indicadores
 
-Projeções removem informação privada **antes** do envio aos componentes. Não se confia apenas em esconder botões. Contratos e dados pessoais de candidatos não substituem identidade/organização do ator autenticado. A designação local usa um identificador demonstrativo de liderança e não cria conta, grant ou papel remoto.
+Passagens observadas, conversão temporal entre etapas, saltos e tempo médio; currículos únicos e ciclos; qualificados; vagas/formalizações; setor/vínculo/origem; aceite sobre propostas resolvidas; motivos de recusa/reprovação; origem Banco; custo informado por contratação; efetividade de fontes; saídas até 90 dias; retenção de 30/60/90 dias somente para coortes maduras. Não presume passagem pelas colunas puladas ou cria resultados sem base.
 
-Finalidade, versão de finalidade e retenção demonstrativa são configuráveis pelo RH, sem estabelecer base legal definitiva. Cadastros guardam o prazo e a finalidade vigentes na coleta simulada; editar a configuração não muda silenciosamente os anteriores. O banco destaca prazos vencidos para revisão humana, sem exclusão automática.
+Os filtros recortam ciclos pela data de entrada, setor, vaga, vínculo e origem; formalizações/saídas são associadas a esses ciclos. A comparação usa o intervalo imediatamente anterior de igual duração quando início/fim são informados. Custos não cadastrados e coortes sem observação suficiente exibem ausência de dados. Retenção é um indicador demonstrativo, sem promessa ou inferência sobre casos não observados.
 
-Anonimização local confirmada remove nome/contato, CV, portfólio, evidências, notas, questionários, análises, respostas, condições identificáveis de propostas e dados dos pacotes de admissão no ATS. Metadados anônimos de processos e custos permanecem. **Não** remove automaticamente cópias autorizadas já criadas no Onboarding, outros navegadores, contas ou backups. Não equivale a atendimento LGPD definitivo; o fluxo de exclusão entre bases precisa de governança futura.
+## Persistência e segurança da demonstração
 
-## Integridade e fluxo financeiro
+IndexedDB `youcon-demo-v1`, store `demos`, chave `recruitment-v1:${organização}:${usuário}:${papéis ordenados}:${vínculo}`. Arquivos Blob são serializados/restaurados pelo armazenamento existente. Não existe sincronização entre contas, dispositivos ou abas simultâneas. Recarregue o quadro após usar o formulário em outra aba. Falha de armazenamento é indicada na interface.
 
-- Candidato é canônico no banco; candidatura é única por candidato/vaga. Reenvio com mesmo e-mail pela página protegida reutiliza a pessoa, sem mesclar silenciosamente dados diferentes. Cadastro manual aponta possíveis duplicidades para revisão humana.
-- Etapas ocupadas por candidatura ativa não podem desaparecer. Candidaturas mantêm snapshots de etapas, formulário e respostas. Mudanças futuras não reescrevem critérios antigos; novos campos/etapas aplicam-se ao contexto correspondente.
-- Avançar exige os campos visíveis e checklist obrigatórios da etapa. Retornar preserva histórico e exige motivo. Passagens são registradas explicitamente, sem inferir conversão pela coluna atual.
-- Aprovação RH não contrata nem movimenta automaticamente. Rascunho automatizado de proposta tem valor incompleto e precisa de revisão RH antes do envio simulado.
-- Valor acima do orçamento exige exceção aprovada pela Diretoria para a candidatura e valor exatos. Não há autoaprovação. Proposta aceita não basta: formalização exige RH, confirmação explícita, posição disponível e cobertura orçamentária.
-- Formalização é idempotente e exclusivamente local. Não cria pessoa real, vínculo, usuário Auth, conta, salário ou pagamento.
+A projeção de liderança elimina orçamento, notas confidenciais, DISC, Temperamentos, admissão, vínculos e relacionamento; mostra apenas processos designados, pareceres compartilhados e CV/respostas autorizados. A Diretoria recebe projeção gerencial sem identidade pessoal, arquivos, instrumentos ou notas. Históricos antigos privados também são removidos dessas projeções.
 
-## Integrações e reaproveitamento autorizado
+Privacidade e retenção são demonstrativas, configuradas pelo RH. Alterar finalidade/prazo não reescreve consentimentos e datas anteriores. Prazos vencidos são alertas para revisão humana; não há eliminação automática. A anonimização remove também os novos anexos e dados privados de admissão/relacionamento, conservando metadados anônimos. Cópias já autorizadas em outros módulos não são apagadas automaticamente; exigem governança futura.
 
-- **Indicação:** origem e referência de indicação preservadas na ficha; interface preparada para integração futura com o programa existente, sem copiar cadastros reais de indicadores.
-- **Base Central / admissão:** após formalização RH, pacote canônico por candidatura com campos autorizados (nome, e-mail, telefone, cidade), autor e organização. O pacote é preparado, sem gravar na Base Central ou em sistemas contratuais.
-- **Onboarding:** o RH encontra as admissões preparadas no módulo existente e pode iniciar um processo fictício mediante ação explícita. Reutiliza nome autorizado e metadados da vaga, seleciona modelos compatíveis e impede duplicidade pela referência canônica. O usuário do processo é marcado `unlinked`, sem criar associação de conta ou conceder acesso. Não copia CV, DISC, notas, contato sem suporte no destino ou dados financeiros.
-- **Calendário:** eventos locais de entrevista no ATS, sem convites, Google Calendar ou integração externa.
-- **Dashboard Gerencial:** indicadores e estruturas gerenciais disponíveis na Visão Geral do ATS para futura agregação. O dashboard antigo não recebe uma integração remota ou dados pessoais automaticamente.
+IndexedDB e JavaScript não constituem autorização, relógio ou auditoria invioláveis. Validação autoritativa, coleta pública, assinatura, processamento de CV, integração de dados e sincronização dependem de uma futura etapa de servidor explicitamente autorizada. Usar somente informações e arquivos fictícios.
 
-## Armazenamento, limites e Preview
+## Preview e recuperação
 
-IndexedDB existente `youcon-demo-v1`, store `demos`, chave própria `recruitment-v1:${organização}:${usuário}:${papéis ordenados}:${vínculo}`. Arquivos Blob são serializados/restaurados localmente. Não há sincronização entre contas, dispositivos ou abas abertas ao mesmo tempo. A ação confirmada de restaurar exemplos afeta somente esse namespace; Onboarding mantém sua chave e os processos já copiados.
+Push desta branch pode gerar apenas deployment **Preview**. Conferir projeto, SHA, branch, target e READY, mantendo proteção por login. O link `https://youcon-people-preview.vercel.app` permanece na versão anterior até **aprovação explícita desta atualização**. Não usar links de bypass, merge ou promoção de produção.
 
-Autorizações e logs locais demonstram os fluxos; não tornam JavaScript/IndexedDB invioláveis, nem fornecem auditoria autoritativa. Horários, prazos, retenção, licenças de acesso e arquivos precisam de validação de servidor em uma etapa futura aprovada. Não utilizar currículos, dados pessoais ou candidaturas reais.
-
-Push da branch gera somente deployment Preview. Conferir projeto, SHA, branch, target Preview e estado READY, preservando proteção por login. Link fixo `https://youcon-people-preview.vercel.app` só é atualizado após **aprovação manual explícita desta versão**. Não usar URLs de bypass, fazer merge ou promover produção. Os links exclusivos de vagas/instrumentos são referências internas da aplicação autenticada, não bypass de login.
-
-Recuperação: manter o deployment anterior READY enquanto o candidato é revisado; uma eventual troca autorizada pode ser revertida reapontando apenas o alias Preview ao deployment anterior. Não há restauração global do Supabase, alteração de outra aplicação ou rollback de produção.
+Recuperação: conservar o deployment anterior READY; após autorização, uma troca do alias pode ser revertida ao deployment anterior. A atualização local é compatível com o namespace antigo e conserva os snapshots originais. Não depende de restauração do Supabase ou de mudanças na outra aplicação.

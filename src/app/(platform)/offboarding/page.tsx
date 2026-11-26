@@ -1,3 +1,5 @@
+import { careerScope } from "@/modules/career/access";
+import { demoWorkflow } from "@/modules/recruitment/workflow-fixtures";
 import { redirect } from "next/navigation";
 import { requirePermission } from "@/modules/access/server";
 import { type Scope } from "@/modules/onboarding/model";
@@ -18,11 +20,16 @@ export default async function Page() {
     name: access.displayName,
     key: `offboarding-v1:${access.organization.id}:${access.user.id}:${mode}`,
   };
+  const recruitmentScope = await careerScope();
   return (
     <OnboardingWorkspace
       key={scope.key}
       scope={scope}
       initial={demoOffboarding(scope)}
+      academyScope={recruitmentScope}
+      initialRecruitment={
+        recruitmentScope.rh ? demoWorkflow(recruitmentScope) : undefined
+      }
     />
   );
 }

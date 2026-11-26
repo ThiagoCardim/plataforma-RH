@@ -46,6 +46,11 @@ export function FieldBuilder({
               value={f.label}
               onChange={(label) => patch(f.id, { label })}
             />
+            <AreaField
+              label={`Descrição do campo ${i + 1}`}
+              value={f.description ?? ""}
+              onChange={(description) => patch(f.id, { description })}
+            />
             <Pick
               label={`Tipo do campo ${i + 1}`}
               value={f.type}
@@ -227,6 +232,11 @@ export function CandidateForm({
       </div>
       {visibleFields(form, answers).map((f) => (
         <div key={f.id}>
+          {f.description && (
+            <p className="mb-2 text-xs text-muted-foreground">
+              {f.description}
+            </p>
+          )}
           {f.type === "Arquivo" ? (
             <>
               <Upload

@@ -1,47 +1,47 @@
-import { notFound } from "next/navigation";
-import { recruitmentScope } from "@/modules/recruitment/access";
-import { demoRecruitment } from "@/modules/recruitment/fixtures";
-import { RecruitmentWorkspace } from "@/modules/recruitment/workspace";
-import { views, type View } from "@/modules/recruitment/model";
+import { notFound, redirect } from "next/navigation";
+import { recruitmentWorkflowScope } from "@/modules/recruitment/access";
+import { demoWorkflow } from "@/modules/recruitment/workflow-fixtures";
+import { OperationalWorkspace } from "@/modules/recruitment/operational-workspace";
+import {
+  workflowViews,
+  type WorkflowView,
+} from "@/modules/recruitment/workflow-types";
 export const metadata = { title: "Recrutamento e Seleção" };
 export default async function Page({
   params,
   searchParams,
 }: {
   params: Promise<{ view: string }>;
-  searchParams: Promise<{
-    vaga?: string;
-    acesso?: string;
-    assessment?: string;
-    token?: string;
-  }>;
+  searchParams: Promise<Record<string, string | undefined>>;
 }) {
-  const p = await params;
-  if (!views.some(([v]) => v === p.view)) notFound();
-  const scope = await recruitmentScope(p.view as View),
+  const { view } = await params,
     q = await searchParams;
+  const legacy: Record<string, WorkflowView> = {
+    "visao-geral": "processo-seletivo",
+    match: "processo-seletivo",
+    modelos: "configuracoes",
+    carreiras: "configuracoes",
+  };
+  if (legacy[view]) {
+    const query = new URLSearchParams(
+      Object.entries(q).filter(
+        (r): r is [string, string] => typeof r[1] === "string",
+      ),
+    );
+    redirect(
+      `/recrutamento/${legacy[view]}${query.size ? "?" + query.toString() : ""}`,
+    );
+  }
+  if (!workflowViews.some(([v]) => v === view)) notFound();
+  const scope = await recruitmentWorkflowScope(view as WorkflowView);
   return (
-    <RecruitmentWorkspace
-      key={
-        scope.key +
-        ":" +
-        p.view +
-        ":" +
-        (q.assessment ?? "") +
-        ":" +
-        (q.token ?? "") +
-        ":" +
-        (q.vaga ?? "") +
-        ":" +
-        (q.acesso ?? "")
-      }
+    <OperationalWorkspace
+      key={scope.key + view + q.assessment}
       scope={scope}
-      initial={demoRecruitment(scope)}
-      view={p.view as View}
-      exclusive={typeof q.vaga === "string" ? q.vaga : undefined}
-      token={typeof q.acesso === "string" ? q.acesso : undefined}
-      assessment={typeof q.assessment === "string" ? q.assessment : undefined}
-      assessmentToken={typeof q.token === "string" ? q.token : undefined}
+      initial={demoWorkflow(scope)}
+      view={view as WorkflowView}
+      assessment={q.assessment}
+      assessmentToken={q.token}
     />
   );
 }

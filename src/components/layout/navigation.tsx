@@ -133,20 +133,25 @@ export function Navigation({
     ...(recruitment
       ? [
           {
-            title: "Recrutamento",
+            title: "Recrutamento e Seleção",
             links: (
               [
-                ["visao-geral", "Visão Geral", "dashboard"],
+                ["processo-seletivo", "Processo Seletivo", "dashboard"],
                 ["vagas", "Gestão de Vagas", "referrals"],
+                ["admissao", "Admissão Digital", "journey"],
                 ["talentos", "Banco de Talentos", "people"],
-                ["match", "YouCon Match", "goals"],
-                ["modelos", "Modelos e Avaliações", "policies"],
-                ["carreiras", "Página de Carreiras", "career"],
+                ["indicadores", "Indicadores", "goals"],
+                ["configuracoes", "Configurações", "policies"],
               ] as const
             )
               .filter(
                 ([v]) =>
-                  recruitment === "hr" || ["visao-geral", "vagas"].includes(v),
+                  recruitment === "hr" ||
+                  (recruitment === "director" &&
+                    ["processo-seletivo", "vagas", "indicadores"].includes(
+                      v,
+                    )) ||
+                  (recruitment === "leader" && v === "processo-seletivo"),
               )
               .map(([v, label, icon]) => ({
                 href: `/recrutamento/${v}`,
