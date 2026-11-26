@@ -79,4 +79,4 @@ Todos os scripts abaixo passaram sequencialmente no mesmo build otimizado, cada 
 
 Os testes demonstram o comportamento local. IndexedDB/JavaScript não oferecem segurança, assinatura, relógio, sincronização ou auditoria autoritativos. Não há OCR, IA externa, coleta pública, mensagens reais, integração Flash/portal operacional ou criação/revogação real de vínculo/acesso.
 
-Apenas o deployment Preview da branch será preparado; o alias fixo continuará apontando à versão anteriormente autorizada até aprovação manual desta atualização. Conferir SHA/branch/projeto/READY/proteção antes de qualquer troca. Produção e Supabase permanecem inalterados. Não utilizar URLs de bypass.
+A autorização permanente de 26/11/2026 permite atualizar automaticamente o alias fixo após concluir a tarefa, sem nova aprovação por entrega. Conferir validações proporcionais, SHA/branch/projeto/ambiente Preview/READY/proteção antes da troca e verificar o destino depois. Falhas obrigatórias conservam a versão anterior. Produção e Supabase permanecem inalterados. Não utilizar URLs de bypass. Ver [fluxo vigente](../PREVIEW.md).

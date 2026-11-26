@@ -45,6 +45,6 @@ As verificações confirmam a demonstração local. Não comprovam persistência
 
 Supabase, produção, portal operacional e permissões remotas não foram alterados. Nenhuma migration, seed remota, merge, pagamento ou promoção executada.
 
-A branch de feature pode gerar deployment Preview automaticamente pelo Git. A atualização do **link fixo** é uma etapa separada: verificar projeto, SHA, branch, target Preview, estado READY e proteção existente; apresentar a versão concreta e obter aprovação manual antes de atribuir `youcon-people-preview.vercel.app`. Não usar URLs de bypass nem promover a produção. Durante esta preparação o alias fixo mantém o deployment anterior.
+A branch de feature pode gerar deployment Preview automaticamente pelo Git. A atualização do **link fixo** exige verificar projeto, SHA, branch, target Preview, READY, validações proporcionais e proteção existente. Pela autorização permanente de 26/11/2026, atualizar automaticamente `youcon-people-preview.vercel.app` após essas verificações, sem nova aprovação por entrega. Em falhas obrigatórias, manter a versão anterior e informar o impedimento. Não usar URLs de bypass nem promover produção. Ver [fluxo vigente](../PREVIEW.md).
 
 Recuperação: antes de qualquer troca autorizada, registrar o deployment anterior do alias. Se necessário, reapontar somente o alias para esse deployment READY. Não há dependência de rollback/restauração do Supabase ou produção; os estados locais novos têm namespaces próprios. Restaurar demonstração é ação local confirmada pelo usuário e não limpa os outros módulos.

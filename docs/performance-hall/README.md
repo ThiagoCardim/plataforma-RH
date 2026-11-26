@@ -91,4 +91,4 @@ Não inserir dados reais. Relógio e autoria de eventos são demonstrativos; arm
 
 Ver `VALIDACAO.md`. Testes de navegador usam app Next.js completo, Chromium e Auth/Data API sintéticos exclusivamente em loopback. Nenhuma fixture remota ou conta real é usada.
 
-Fluxo desta entrega: concluir checks → commit/push de feature branch → Preview READY do commit correto, com proteção mantida → apresentar para aprovação manual → somente após autorização, apontar `youcon-people-preview.vercel.app` ao deployment aprovado. Não promover a produção, não fazer merge e não usar links de bypass. O link fixo permanece na versão anterior durante a preparação.
+Fluxo vigente: concluir checks proporcionais → commit/push de feature branch → Preview READY do SHA/branch/projeto corretos, com proteção mantida → atualizar automaticamente `youcon-people-preview.vercel.app` e verificar o destino. A autorização permanente de 26/11/2026 dispensa nova aprovação por entrega. Falhas obrigatórias mantêm a versão anterior. Não promover produção, fazer merge ou usar links de bypass. Ver [procedimento de homologação](../PREVIEW.md).

@@ -65,6 +65,6 @@ IndexedDB e JavaScript não constituem autorização, relógio ou auditoria invi
 
 ## Preview e recuperação
 
-Push desta branch pode gerar apenas deployment **Preview**. Conferir projeto, SHA, branch, target e READY, mantendo proteção por login. O link `https://youcon-people-preview.vercel.app` permanece na versão anterior até **aprovação explícita desta atualização**. Não usar links de bypass, merge ou promoção de produção.
+Push desta branch pode gerar apenas deployment **Preview**. Concluir validações proporcionais e conferir projeto, SHA, branch, target e READY, mantendo proteção por login. Pela autorização permanente de 26/11/2026, atualizar automaticamente `https://youcon-people-preview.vercel.app` sem nova aprovação por entrega e verificar o destino. Falhas obrigatórias mantêm a versão anterior. Não usar links de bypass, merge ou promoção de produção. Ver [fluxo vigente](../PREVIEW.md).
 
-Recuperação: conservar o deployment anterior READY; após autorização, uma troca do alias pode ser revertida ao deployment anterior. A atualização local é compatível com o namespace antigo e conserva os snapshots originais. Não depende de restauração do Supabase ou de mudanças na outra aplicação.
+Recuperação: conservar o deployment anterior READY; em falha da atualização, recuperar somente o alias de Preview para o deployment anterior conhecido e conferir o destino. A atualização local usa o namespace antigo e conserva os snapshots originais; recuperar o deployment não desfaz automaticamente alterações no IndexedDB. Não depende de restauração do Supabase ou de mudanças na outra aplicação.

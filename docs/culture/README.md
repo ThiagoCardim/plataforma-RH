@@ -64,6 +64,6 @@ Os comandos e projeções locais demonstram os fluxos; não tornam JavaScript/In
 
 ## Homologação e recuperação
 
-Branch de funcionalidade, deployment Preview separado. Conferir SHA, branch, projeto correto, target Preview (`null`) e estado READY. Preservar proteção de login e não usar links/tokens de bypass. O alias `https://youcon-people-preview.vercel.app` só muda após autorização manual explícita desta versão. Produção não é promovida ou modificada.
+Branch de funcionalidade, deployment Preview separado. Concluir validações proporcionais e conferir SHA, branch, projeto correto, target Preview (`null`) e READY. Preservar proteção de login e não usar links/tokens de bypass. Pela autorização permanente de 26/11/2026, atualizar automaticamente `https://youcon-people-preview.vercel.app` sem nova aprovação por entrega, verificando o destino. Falhas obrigatórias conservam a versão anterior. Produção não é promovida ou modificada. Ver [fluxo vigente](../PREVIEW.md).
 
 Em falha, manter o alias na versão anterior READY. Após uma troca autorizada, recuperação consiste em reapontar somente o alias Preview ao deployment registrado anteriormente. Não há dependência de restauração do Supabase. Recuperação editorial local ocorre por versão histórica como rascunho e nova publicação; ciências anteriores permanecem preservadas.

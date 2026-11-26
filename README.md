@@ -50,6 +50,8 @@ O login real inicial foi validado, mas renovação de sessão, logout real e cen
 
 ## Vercel e homologação
 
+**Fluxo vigente desde 26/11/2026:** o usuário autorizou permanentemente a atualização automática de [youcon-people-preview.vercel.app](https://youcon-people-preview.vercel.app) ao concluir cada tarefa, sem nova aprovação por versão, após validações proporcionais e confirmação de SHA/branch/projeto, Preview READY e proteção mantida. Em caso de falha obrigatória, conservar a versão anterior. Ver [procedimento e recuperação](docs/PREVIEW.md) e [orientação para agentes](AGENTS.md). A autorização não inclui Supabase, produção, portal operacional, permissões ou merges.
+
 `vercel.json` fixa o framework Next.js, instalação por `npm ci`, build por `npm run build` e saída automática (`outputDirectory: null`). O projeto Vercel `plataformarh`, equipe `contato-youconprojets-projects`, usa a mesma configuração. Não usar `public`, `out` ou exportação estática: login SSR e Server Actions precisam do runtime Next.js. A configuração de build vale para implantações futuras; não promove nem altera implantações existentes. Manter Node 24.x no projeto Vercel, versão usada nas verificações.
 
 A Preview atual usa o banco compartilhado ativo e **não é um banco de homologação**. Novas escritas e fixtures devem ser validadas em ambiente separado conforme a [proposta de homologação](docs/HOMOLOGATION.md), ainda não provisionado. Não copiar `.env.local`, usuários ou dados pessoais do banco ativo para testes.

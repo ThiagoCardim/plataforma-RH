@@ -66,6 +66,6 @@ Arquivos Blob são serializados/restaurados pela infraestrutura compartilhada. N
 
 ## Preview
 
-Preparação em branch de funcionalidade, sem merge. O push gera deployment Preview; conferir projeto, SHA, branch, target Preview e estado READY. Preservar proteção de login, sem links ou tokens de bypass. O alias fixo `https://youcon-people-preview.vercel.app` só muda após **aprovação manual explícita** desta versão. Antes disso, permanece apontando para a versão anterior. Nunca promover a produção.
+Preparação em branch de funcionalidade, sem merge. O push gera deployment Preview; concluir validações proporcionais e conferir projeto, SHA, branch, target Preview e READY. Preservar proteção de login, sem links ou tokens de bypass. Pela autorização permanente de 26/11/2026, atualizar automaticamente `https://youcon-people-preview.vercel.app`, sem nova aprovação por entrega, e verificar o destino. Falhas obrigatórias conservam a versão anterior. Nunca promover produção. Ver [fluxo vigente](../PREVIEW.md).
 
 Consulta de metadados Vercel não substitui teste funcional autenticado pelo usuário no candidato. Recuperação: manter/reapontar somente o alias Preview ao deployment anterior READY; não desfazer dados no Supabase. Dados locais ficam no navegador por origem; trocar domínio não transporta os exemplos editados.
