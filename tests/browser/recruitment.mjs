@@ -224,7 +224,7 @@ try {
     const card = p
       .locator("article.ats-card")
       .filter({ has: p.getByRole("button", { name: new RegExp("^" + name) }) });
-    await card.locator("summary").click();
+    await card.locator("summary").filter({ hasText: "Mover card" }).click();
     await p.getByLabel("Mover " + name, { exact: true }).selectOption(value);
     await dialog(p)
       .getByLabel("Motivo da movimentação", { exact: true })

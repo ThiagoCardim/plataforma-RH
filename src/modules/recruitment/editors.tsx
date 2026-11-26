@@ -20,7 +20,8 @@ import {
   factFields,
   type Claim,
 } from "./model";
-import { FieldBuilder } from "./forms";
+import { FieldBuilder, StageField } from "./forms";
+import { type Field, visibleFields } from "./model";
 const choices = (xs: readonly string[]) => xs.map((x) => ({ id: x, name: x }));
 export function JobEditor({
   initial,
@@ -434,12 +435,17 @@ export function JobEditor({
 export function CandidateEditor({
   initial,
   save,
+  profileFields,
+  initialExtra,
 }: {
   initial: Candidate;
-  save: (p: Candidate) => void;
+  save: (p: Candidate, extra?: Record<string, string>) => void;
+  profileFields?: Field[];
+  initialExtra?: Record<string, string>;
 }) {
   const [p, set] = useState(() => structuredClone(initial)),
-    [tab, setTab] = useState("Cadastro");
+    [tab, setTab] = useState("Cadastro"),
+    [extra, setExtra] = useState<Record<string, string>>(initialExtra ?? {});
   const patch = (x: Partial<Candidate>) => set({ ...p, ...x });
   return (
     <div className="space-y-5">
@@ -452,30 +458,64 @@ export function CandidateEditor({
       {tab === "Cadastro" ? (
         <>
           <div className="grid gap-4 sm:grid-cols-2">
-            {(
-              [
-                ["name", "Nome completo"],
-                ["email", "E-mail"],
-                ["phone", "Telefone/WhatsApp"],
-                ["city", "Localização"],
-                ["sector", "Setor de interesse"],
-                ["education", "Formação"],
-                ["experience", "Experiência"],
-                ["skills", "Competências técnicas"],
-                ["software", "Softwares"],
-                ["availability", "Disponibilidade"],
-                ["source", "Origem"],
-                ["referral", "Indicação ou referência"],
-              ] as const
-            ).map(([k, label]) => (
-              <TextField
-                key={k}
-                label={label}
-                type={k === "email" ? "email" : "text"}
-                value={p[k]}
-                onChange={(v) => patch({ [k]: v })}
-              />
-            ))}
+            {profileFields
+              ? visibleFields(
+                  {
+                    id: "profile",
+                    name: "Ficha",
+                    version: 1,
+                    color: "#f97316",
+                    message: "",
+                    fields: profileFields,
+                  },
+                  Object.fromEntries(
+                    profileFields.map((f) => [
+                      f.id,
+                      f.mapping
+                        ? String(p[f.mapping as keyof Candidate] ?? "")
+                        : (extra[f.id] ?? ""),
+                    ]),
+                  ),
+                ).map((f) => (
+                  <StageField
+                    key={f.id}
+                    field={f}
+                    value={
+                      f.mapping
+                        ? String(p[f.mapping as keyof Candidate] ?? "")
+                        : (extra[f.id] ?? "")
+                    }
+                    change={(v) =>
+                      f.mapping
+                        ? patch({ [f.mapping]: v })
+                        : setExtra({ ...extra, [f.id]: v })
+                    }
+                  />
+                ))
+              : (
+                  [
+                    ["name", "Nome completo"],
+                    ["email", "E-mail"],
+                    ["phone", "Telefone/WhatsApp"],
+                    ["city", "Localização"],
+                    ["sector", "Setor de interesse"],
+                    ["education", "Formação"],
+                    ["experience", "Experiência"],
+                    ["skills", "Competências técnicas"],
+                    ["software", "Softwares"],
+                    ["availability", "Disponibilidade"],
+                    ["source", "Origem"],
+                    ["referral", "Indicação ou referência"],
+                  ] as const
+                ).map(([k, label]) => (
+                  <TextField
+                    key={k}
+                    label={label}
+                    type={k === "email" ? "email" : "text"}
+                    value={p[k]}
+                    onChange={(v) => patch({ [k]: v })}
+                  />
+                ))}
             <TextField
               label="Pretensão mensal (R$)"
               type="number"
@@ -628,7 +668,7 @@ export function CandidateEditor({
           </Button>
         </>
       )}
-      <Button onClick={() => save(p)}>Salvar talento</Button>
+      <Button onClick={() => save(p, extra)}>Salvar talento</Button>
     </div>
   );
 }

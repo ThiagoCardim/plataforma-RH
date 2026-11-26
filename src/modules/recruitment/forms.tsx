@@ -18,9 +18,11 @@ export function FieldBuilder({
   fields,
   change,
   stageFields = false,
+  mappingOptions,
 }: {
   fields: Field[];
   stageFields?: boolean;
+  mappingOptions?: { id: string; name: string }[];
   change: (f: Field[]) => void;
 }) {
   const patch = (id: string, p: Partial<Field>) =>
@@ -86,23 +88,26 @@ export function FieldBuilder({
               label={`Mapeamento do campo ${i + 1}`}
               value={f.mapping}
               onChange={(mapping) => patch(f.id, { mapping })}
-              options={[
-                ["", "Resposta adicional"],
-                ["name", "Nome"],
-                ["email", "E-mail"],
-                ["phone", "Telefone"],
-                ["city", "Cidade"],
-                ["sector", "Área"],
-                ["education", "Formação"],
-                ["experience", "Experiência"],
-                ["skills", "Competências"],
-                ["software", "Softwares"],
-                ["availability", "Disponibilidade"],
-                ["expected", "Pretensão mensal em R$"],
-                ["cv", "Currículo"],
-                ["portfolio", "Portfólio"],
-                ["notes", "Observações"],
-              ].map(([id, name]) => ({ id, name }))}
+              options={
+                mappingOptions ??
+                [
+                  ["", "Resposta adicional"],
+                  ["name", "Nome"],
+                  ["email", "E-mail"],
+                  ["phone", "Telefone"],
+                  ["city", "Cidade"],
+                  ["sector", "Área"],
+                  ["education", "Formação"],
+                  ["experience", "Experiência"],
+                  ["skills", "Competências"],
+                  ["software", "Softwares"],
+                  ["availability", "Disponibilidade"],
+                  ["expected", "Pretensão mensal em R$"],
+                  ["cv", "Currículo"],
+                  ["portfolio", "Portfólio"],
+                  ["notes", "Observações"],
+                ].map(([id, name]) => ({ id, name }))
+              }
             />
             <Pick
               label={`Exibir campo ${i + 1} quando`}

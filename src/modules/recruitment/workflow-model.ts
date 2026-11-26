@@ -314,6 +314,7 @@ export function projectWorkflow(input: State, c: Scope): State {
   if (c.rh) return s;
   const clean = (central: CentralConfig): CentralConfig => ({
     ...central,
+    selection: undefined,
     stages: central.stages.map((st) => ({ ...st, fields: [], tasks: [] })),
     admissionStages: Object.fromEntries(
       Object.entries(central.admissionStages).map(([k, rows]) => [

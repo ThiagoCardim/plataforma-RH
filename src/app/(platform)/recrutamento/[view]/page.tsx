@@ -6,6 +6,7 @@ import {
   workflowViews,
   type WorkflowView,
 } from "@/modules/recruitment/workflow-types";
+import { selectionDemoActor } from "@/modules/recruitment/selection-model";
 export const metadata = { title: "Recrutamento e Seleção" };
 export default async function Page({
   params,
@@ -33,11 +34,19 @@ export default async function Page({
     );
   }
   if (!workflowViews.some(([v]) => v === view)) notFound();
-  const scope = await recruitmentWorkflowScope(view as WorkflowView);
+  const authenticatedScope = await recruitmentWorkflowScope(
+    view as WorkflowView,
+  );
+  const selectionDemo = view === "processo-seletivo" && q.demonstracao === "rh";
+  const scope = selectionDemo
+    ? selectionDemoActor(authenticatedScope)
+    : authenticatedScope;
   return (
     <OperationalWorkspace
       key={scope.key + view + q.assessment}
       scope={scope}
+      authenticatedScope={authenticatedScope}
+      selectionDemo={selectionDemo}
       initial={demoResumeDatabase(scope)}
       view={view as WorkflowView}
       assessment={q.assessment}

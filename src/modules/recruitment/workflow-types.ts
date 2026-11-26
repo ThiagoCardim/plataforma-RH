@@ -1,3 +1,4 @@
+import type { SelectionConfig } from "./selection-model";
 import type { Contract } from "../career/model";
 import type { Stage, Form, Criterion } from "./model";
 import type { Attachment } from "../documents/model";
@@ -37,6 +38,7 @@ export type DocumentRule = {
   instructions: string;
 };
 export type CentralConfig = {
+  selection?: SelectionConfig;
   stages: PipelineStage[];
   cards: string[];
   tags: string[];

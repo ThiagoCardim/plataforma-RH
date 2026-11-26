@@ -70,6 +70,16 @@ import {
   eligibleResumes,
   archiveProcesses,
 } from "./resume-model";
+import { SelectionSettings } from "./selection-controls";
+import {
+  selectionConfig,
+  selectionProfileValues,
+  saveSelectionCandidate,
+  moveSelectionCards,
+  deleteSelectionCards,
+  selectionRoleLabel,
+} from "./selection-model";
+import { eraseResumeData } from "./resume-operations";
 import "./recruitment.css";
 export function OperationalWorkspace({
   initial,
@@ -77,12 +87,16 @@ export function OperationalWorkspace({
   view,
   assessment,
   assessmentToken,
+  authenticatedScope = scope,
+  selectionDemo = false,
 }: {
   initial: State;
   scope: Scope;
   view: WorkflowView;
   assessment?: string;
   assessmentToken?: string;
+  authenticatedScope?: Scope;
+  selectionDemo?: boolean;
 }) {
   const local = useRecruitment(initial, scope),
     { state, act } = local,
@@ -97,7 +111,9 @@ export function OperationalWorkspace({
     [reason, setReason] = useState(""),
     [copied, setCopied] = useState(false),
     [queryName, setQueryName] = useState(""),
-    [queryDismissed, setQueryDismissed] = useState(false);
+    [queryDismissed, setQueryDismissed] = useState(false),
+    [settings, setSettings] = useState<string | undefined>(),
+    [cardColor, setCardColor] = useState(selectionConfig(state).cardColor);
   const queryAssessment =
     scope.rh && !queryDismissed
       ? state.assessments.find(
@@ -140,7 +156,14 @@ export function OperationalWorkspace({
       <article
         key={a.id}
         className="ats-card"
-        draggable={scope.rh && a.status !== "Contratada"}
+        draggable={scope.rh && (process || a.status !== "Contratada")}
+        style={
+          process
+            ? {
+                borderLeft: `3px solid ${a.fields["selection:color"] || selectionConfig(state).cardColor}`,
+              }
+            : undefined
+        }
         onDragStart={(e) => {
           e.dataTransfer.setData("text/plain", a.id);
           e.dataTransfer.effectAllowed = "move";
@@ -163,6 +186,54 @@ export function OperationalWorkspace({
             <Badge>{a.contract}</Badge>
           )}
           {scope.rh && <TalentStar {...props} candidate={p} />}
+          {process && scope.rh && (
+            <details className="relative shrink-0">
+              <summary
+                aria-label={`Ações do card de ${p.name}`}
+                className="cursor-pointer list-none rounded-md px-2 py-1 text-lg leading-none [&::-webkit-details-marker]:hidden"
+              >
+                •••
+              </summary>
+              <div className="absolute right-0 top-full z-30 flex w-48 flex-col gap-1 rounded-lg border bg-card p-1 shadow-lg">
+                <Button variant="ghost" onClick={() => open(p.id)}>
+                  Abrir ficha
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setEdit(p);
+                    setCardColor(
+                      a.fields["selection:color"] ||
+                        selectionConfig(state).cardColor,
+                    );
+                    setModal("edit");
+                  }}
+                >
+                  Editar card
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setSelected([a.id]);
+                    setReason("");
+                    setModal("delete-card");
+                  }}
+                >
+                  Excluir card
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setCandidate(p.id);
+                    setReason("");
+                    setModal("delete-data");
+                  }}
+                >
+                  Excluir dados fictícios
+                </Button>
+              </div>
+            </details>
+          )}
           <GripVertical size={13} className="text-muted-foreground" />
         </div>
         <button
@@ -186,6 +257,17 @@ export function OperationalWorkspace({
             <p className="mt-2 truncate text-xs text-primary">{a.jobTitle}</p>
           )}
         </button>
+        {process &&
+          selectionConfig(state)
+            .profileFields.filter((f) => !f.mapping && show("profile:" + f.id))
+            .map((f) => (
+              <p key={f.id} className="mt-2 text-xs">
+                <strong>{f.label}: </strong>
+                {a.fields["selection-profile:" + f.id] ||
+                  a.answers[f.id] ||
+                  "Não informado"}
+              </p>
+            ))}
         {show("tags") && (
           <div className="mt-2 flex flex-wrap gap-1">
             {p.tags.map((t) => (
@@ -283,12 +365,39 @@ export function OperationalWorkspace({
       <Notice error={local.error} notice={local.notice} />
       {process && (
         <>
+          <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-orange-200 bg-orange-50 p-3 text-sm">
+            <div>
+              <strong>
+                Perfil autenticado: {selectionRoleLabel(authenticatedScope)}
+              </strong>
+              <p className="text-xs">
+                {selectionDemo
+                  ? "Demonstração RH isolada: apenas exemplos fictícios, sem mudança de perfil, organização ou permissões reais. Os outros módulos mantêm o acesso original."
+                  : scope.rh
+                    ? "Gestão local do RH disponível nesta página."
+                    : "O perfil real permite acompanhamento limitado. Os controles de RH ficam disponíveis apenas na demonstração isolada."}
+              </p>
+            </div>
+            <Link
+              className="rounded-lg border bg-white px-3 py-2 text-primary"
+              href={
+                selectionDemo
+                  ? "/recrutamento/processo-seletivo"
+                  : "/recrutamento/processo-seletivo?demonstracao=rh"
+              }
+            >
+              {selectionDemo
+                ? "Voltar ao perfil real"
+                : "Testar RH com dados fictícios"}
+            </Link>
+          </section>
           <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-2">
             {scope.rh && (
               <>
                 <Button
                   onClick={() => {
                     setEdit(newCandidate(state.privacy.days));
+                    setCardColor(selectionConfig(state).cardColor);
                     setModal("create");
                   }}
                 >
@@ -336,13 +445,10 @@ export function OperationalWorkspace({
               {mode === "Kanban" ? "Tabela" : bank ? "Cards" : "Kanban"}
             </Button>
             {scope.rh && (
-              <Link
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm text-primary"
-                href="/recrutamento/configuracoes"
-              >
+              <Button variant="outline" onClick={() => setSettings("")}>
                 <Settings2 size={15} />
-                Gerenciar processo
-              </Link>
+                Configurar Kanban
+              </Button>
             )}
           </div>
           {advanced && (
@@ -575,6 +681,30 @@ export function OperationalWorkspace({
                     style={{ borderTopColor: st.color }}
                   >
                     <h2>{st.name}</h2>
+                    {scope.rh && (
+                      <details className="relative shrink-0">
+                        <summary
+                          aria-label={`Editar fase ${st.name}`}
+                          className="cursor-pointer list-none rounded-md px-2 py-1 text-lg leading-none [&::-webkit-details-marker]:hidden"
+                        >
+                          •••
+                        </summary>
+                        <div className="absolute right-0 top-full z-30 w-48 space-y-1 rounded-lg border bg-card p-2 text-xs shadow-lg">
+                          <Button
+                            variant="ghost"
+                            onClick={() => setSettings(st.id)}
+                          >
+                            Editar / renomear
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            onClick={() => setSettings("")}
+                          >
+                            Reordenar / excluir
+                          </Button>
+                        </div>
+                      </details>
+                    )}
                     <Badge>
                       {apps.filter((a) => a.stage === st.id).length}
                     </Badge>
@@ -614,12 +744,32 @@ export function OperationalWorkspace({
           <Notice error={local.error} notice={local.notice} />
           <div className="space-y-6">
             {scope.rh && <ResumeDetails {...props} id={opened} />}
+            {process && scope.rh && (
+              <div className="grid gap-3 rounded-xl border p-4 sm:grid-cols-2">
+                {selectionConfig(state)
+                  .profileFields.filter((f) => !f.mapping)
+                  .map((f) => (
+                    <p key={f.id} className="text-sm">
+                      <strong>{f.label}: </strong>
+                      {selectionProfileValues(state, opened)[f.id] ||
+                        "Não informado"}
+                    </p>
+                  ))}
+              </div>
+            )}
             {scope.rh && (
               <CandidateOperations
                 {...props}
                 id={opened}
                 edit={() => {
                   setEdit(state.candidates.find((p) => p.id === opened));
+                  setCardColor(
+                    state.applications.find(
+                      (a) =>
+                        a.candidate === opened && !a.historical && !a.archived,
+                    )?.fields["selection:color"] ||
+                      selectionConfig(state).cardColor,
+                  );
                   setModal("edit");
                 }}
               />
@@ -646,10 +796,37 @@ export function OperationalWorkspace({
             setModal("");
           }}
         >
+          {process && (
+            <TextField
+              label="Cor deste card"
+              type="color"
+              value={cardColor}
+              onChange={setCardColor}
+            />
+          )}
           <CandidateEditor
+            profileFields={
+              process ? selectionConfig(state).profileFields : undefined
+            }
+            initialExtra={
+              process ? selectionProfileValues(state, edit.id) : undefined
+            }
             initial={edit}
-            save={(p) => {
-              if (act((s) => registerResume(s, scope, p, modal === "create"))) {
+            save={(p, extra) => {
+              if (
+                act((s) =>
+                  process
+                    ? saveSelectionCandidate(
+                        s,
+                        scope,
+                        p,
+                        extra ?? {},
+                        modal === "create",
+                        cardColor,
+                      )
+                    : registerResume(s, scope, p, modal === "create"),
+                )
+              ) {
                 setEdit(undefined);
                 setModal("");
               }
@@ -668,7 +845,7 @@ export function OperationalWorkspace({
             <p className="text-xs text-muted-foreground">
               {state.central!.privacyNotice}
             </p>
-            <div className="flex flex-wrap gap-3">
+            <div className={selectionDemo ? "hidden" : "flex flex-wrap gap-3"}>
               <Button
                 variant="outline"
                 onClick={async () => {
@@ -748,11 +925,23 @@ export function OperationalWorkspace({
                 .join(" · ")}
               . Histórico preservado; etapas podem ser puladas.
             </p>
+            {process && selectedApps.some((a) => a.status === "Contratada") && (
+              <p className="text-sm text-muted-foreground">
+                Mover um card já formalizado altera apenas sua posição visual.
+                Contratação, admissão e vínculo permanecem preservados.
+              </p>
+            )}
             <Button
               onClick={() => {
                 const result = act((s) =>
                   modal === "move"
-                    ? moveCentral(s, scope, selected, target, reason)
+                    ? (process ? moveSelectionCards : moveCentral)(
+                        s,
+                        scope,
+                        selected,
+                        target,
+                        reason,
+                      )
                     : selected.reduce(
                         (next, id) => reactivateCycle(next, scope, id, reason),
                         s,
@@ -793,6 +982,61 @@ export function OperationalWorkspace({
               }}
             >
               Confirmar arquivamento local
+            </Button>
+          </div>
+        </SideSheet>
+      )}
+      {process && settings !== undefined && (
+        <SelectionSettings
+          {...props}
+          phase={settings || undefined}
+          close={() => setSettings(undefined)}
+        />
+      )}
+      {process && ["delete-card", "delete-data"].includes(modal) && (
+        <SideSheet
+          title={
+            modal === "delete-card"
+              ? "Excluir card local"
+              : "Excluir dados fictícios"
+          }
+          close={() => setModal("")}
+        >
+          <Notice error={local.error} notice={local.notice} />
+          <div className="space-y-4">
+            <p className="text-sm">
+              {modal === "delete-card"
+                ? "O card sai do quadro. O currículo, histórico, admissões e vínculos são preservados. Dados fictícios podem ser excluídos pela ação separada de anonimização."
+                : "Esta ação anonimiza o cadastro demonstrativo e suas referências locais. Não altera contas, acessos ou sistemas reais."}
+            </p>
+            <AreaField
+              label="Motivo da exclusão local"
+              value={reason}
+              onChange={setReason}
+            />
+            <Button
+              disabled={!reason.trim()}
+              onClick={() => {
+                if (
+                  !confirm(
+                    "Confirmar exclusão exclusivamente dos dados locais selecionados?",
+                  )
+                )
+                  return;
+                if (
+                  act((s) =>
+                    modal === "delete-card"
+                      ? deleteSelectionCards(s, scope, selected, reason, true)
+                      : eraseResumeData(s, scope, opened!, reason),
+                  )
+                ) {
+                  setSelected([]);
+                  setModal("");
+                  setCandidate(undefined);
+                }
+              }}
+            >
+              Confirmar exclusão local
             </Button>
           </div>
         </SideSheet>
