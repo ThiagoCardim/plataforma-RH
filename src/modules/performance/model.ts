@@ -1,3 +1,4 @@
+import type { LeaderGoal } from "./leader-goals-model";
 import {
   type Scope,
   type Contract,
@@ -176,6 +177,8 @@ export type Regulation = {
   by: string;
 };
 export type PerformanceState = {
+  leaderGoals?: LeaderGoal[];
+  leaderPhotos?: Record<string, string>;
   version: 1;
   org: string;
   areas: Area[];
@@ -310,6 +313,23 @@ export function projection(s: PerformanceState, c: Scope): PerformanceState {
         : [],
     cycles: c.leader && c.contract !== "PJ" ? s.cycles : [],
     evaluations: evals,
+    leaderGoals: s.leaderGoals
+      ?.filter((g) =>
+        g.leaders.some((id) =>
+          s.people.some((p) => p.id === id && p.user === c.user),
+        ),
+      )
+      .map((g) => ({
+        ...g,
+        leaders: g.leaders.filter((id) =>
+          s.people.some((p) => p.id === id && p.user === c.user),
+        ),
+      })),
+    leaderPhotos: Object.fromEntries(
+      Object.entries(s.leaderPhotos ?? {}).filter(([id]) =>
+        s.people.some((p) => p.id === id && p.user === c.user),
+      ),
+    ),
     responsibilities: [],
     occurrences: [],
     diary: [],

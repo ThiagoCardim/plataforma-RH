@@ -37,3 +37,18 @@ Ao concluir cada tarefa:
 Se qualquer validação obrigatória falhar ou não puder ser confirmada, manter a versão anterior e informar o impedimento; não publicar uma versão alternativa silenciosamente. Se a troca falhar, verificar o destino efetivo antes de agir e, se necessário, recuperar apenas o alias de Preview para o deployment anterior conhecido. Não usar promoção/rollback de produção.
 
 **Limites absolutos:** esta autorização é exclusiva da homologação. Não autoriza alterações no Supabase, Auth/RLS/grants/dados remotos, produção, portal operacional, outra aplicação, permissões de acesso, migrations/seeds ou merges. Não ampliar a automação para esses alvos.
+
+## Prototipagem — validação essencial e economia de processamento (26/11/2026)
+
+Regra permanente para a fase atual de prototipagem, válida nas próximas implementações e ajustes:
+
+- Não criar novos testes automatizados de rotina.
+- Não executar suítes completas de testes ou de navegador a cada implementação.
+- Realizar somente verificações essenciais de compilação, segurança e publicação, proporcionais à alteração, além de testes pontuais quando indispensáveis. Não ampliar nem repetir verificações sem necessidade concreta.
+- A validação funcional e visual será realizada manualmente pelo usuário na homologação.
+- Reservar testes abrangentes para as etapas de integração e pré-produção.
+- Preservar os testes existentes e todas as regras de segurança, autenticação, autorização e proteção de ambientes.
+
+Priorizar economia de processamento, implementação objetiva e entregas rápidas. Esta regra delimita as validações proporcionais do fluxo de homologação e prevalece sobre orientações anteriores que determinem testes abrangentes por entrega durante a prototipagem. Não dispensa as verificações essenciais de publicação: deployment READY, SHA/branch/projeto/equipe corretos, proteção de acesso preservada e produção inalterada.
+
+Para esta alteração exclusivamente de instruções, não executar testes, criar deployment ou atualizar o alias de homologação. Manter a versão publicada existente; não fazer push que dispare deployment para esta alteração.
